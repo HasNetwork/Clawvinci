@@ -69,10 +69,18 @@ impl<V> Keyframe<V> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct KeyframeTrack<V> {
     #[serde(default)]
     pub keyframes: Vec<Keyframe<V>>,
+}
+
+impl<V> Default for KeyframeTrack<V> {
+    fn default() -> Self {
+        Self {
+            keyframes: Vec::new(),
+        }
+    }
 }
 
 impl<V: Clone + PartialEq> KeyframeTrack<V> {

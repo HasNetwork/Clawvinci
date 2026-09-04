@@ -187,7 +187,7 @@ impl Default for TextBackground {
             color: default_shadow_color(),
             padding_x: 0.0,
             padding_y: 0.0,
-            cornerRadius: 0.0,
+            corner_radius: 0.0,
             offset_x: 0.0,
             offset_y: 0.0,
             outline_color: default_outline_color(),

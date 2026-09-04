@@ -13,7 +13,7 @@ use crate::text_fill_mode::TextFillMode;
 use crate::text_style::TextStyle;
 use crate::timeline_marker::TimelineMarker;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use uuid::Uuid;
 
 fn default_uuid() -> String {
@@ -291,7 +291,7 @@ impl Transform {
     }
 
     pub fn snap_to_canvas_edges(&mut self, threshold: f64) {
-        let (tl_x, tl_y) = self.top_left();
+        let (tl_x, _) = self.top_left();
         let snapped_left = Self::snap_to_boundary(tl_x, threshold);
         let snapped_right = Self::snap_to_boundary(tl_x + self.width, threshold);
         if snapped_left != tl_x {
@@ -300,8 +300,7 @@ impl Transform {
             self.center_x -= tl_x + self.width - snapped_right;
         }
 
-        let (tl2_x, tl2_y) = self.top_left();
-        let _ = tl2_x;
+        let (_, tl2_y) = self.top_left();
         let snapped_top = Self::snap_to_boundary(tl2_y, threshold);
         let snapped_bottom = Self::snap_to_boundary(tl2_y + self.height, threshold);
         if snapped_top != tl2_y {
