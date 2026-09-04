@@ -45,5 +45,11 @@ Executed Phase 0.0 Foundation per `PLAN/0-0-foundation.md`:
 
 ## Verification
 
-- Scope check: Verified no files outside `windows/`, `.github/`, and `.agents/` were touched.
-- Remote CI: Pushed to `HasNetwork/Clawvinci` on branch `worktree-plan-windows-port` to run full build and test suite on GitHub Actions `windows-latest`.
+- **Scope Check**: Verified no files outside `windows/`, `.github/`, and `.agents/` were touched (preserving original macOS source intact).
+- **Remote CI Run**: Pushed to `HasNetwork/Clawvinci` on branch `worktree-plan-windows-port`.
+  - Workflow run: [Run 33902081527](https://github.com/HasNetwork/Clawvinci/actions/runs/33902081527) (Job 101118262978) completed successfully in 12m45s on `windows-latest`.
+  - `cargo check --workspace`: Passed.
+  - `cargo clippy --workspace -- -D warnings`: Passed with 0 warnings.
+  - `cargo test --workspace`: Passed (all crate test stubs verified).
+  - `npm run tauri build -- --debug`: Passed, generating `clawvinci.exe` (12.7 MB) and `Clawvinci_0.1.0_x64-setup.exe` (2.4 MB NSIS installer).
+  - Artifact `clawvinci-windows-x64` downloaded and verified locally.
