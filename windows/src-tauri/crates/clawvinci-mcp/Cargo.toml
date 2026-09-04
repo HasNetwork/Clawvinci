@@ -1,0 +1,15 @@
+[package]
+name = "clawvinci-mcp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Phase 8: HTTP/SSE MCP server and 53-tool executor"
+
+[dependencies]
+clawvinci-model = { path = "../clawvinci-model" }
+clawvinci-timeline = { path = "../clawvinci-timeline" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true

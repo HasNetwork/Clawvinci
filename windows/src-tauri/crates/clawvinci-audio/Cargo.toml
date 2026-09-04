@@ -1,0 +1,14 @@
+[package]
+name = "clawvinci-audio"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Phase 9: Beat detection, silence detection, audio analysis"
+
+[dependencies]
+clawvinci-model = { path = "../clawvinci-model" }
+clawvinci-media = { path = "../clawvinci-media" }
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true

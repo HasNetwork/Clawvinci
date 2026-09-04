@@ -1,0 +1,12 @@
+[package]
+name = "clawvinci-timeline"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Phase 3: Timeline editing core, ripple/overwrite, shared undo history"
+
+[dependencies]
+clawvinci-model = { path = "../clawvinci-model" }
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

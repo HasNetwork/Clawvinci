@@ -1,0 +1,13 @@
+[package]
+name = "clawvinci-search"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Phase 10: Transcription search, SigLIP2 visual embedding and search"
+
+[dependencies]
+clawvinci-model = { path = "../clawvinci-model" }
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true

@@ -1,0 +1,11 @@
+[package]
+name = "clawvinci-model"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Phase 1: Domain models and .palmier project format"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

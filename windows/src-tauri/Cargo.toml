@@ -1,0 +1,53 @@
+[workspace]
+members = [
+    ".",
+    "crates/*",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+authors = ["Clawvinci Contributors"]
+repository = "https://github.com/HasNetwork/Clawvinci"
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+tokio = { version = "1.38", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[package]
+name = "clawvinci"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Clawvinci — AI-native video editor for Windows"
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# Phase crates
+clawvinci-model = { path = "crates/clawvinci-model" }
+clawvinci-media = { path = "crates/clawvinci-media" }
+clawvinci-timeline = { path = "crates/clawvinci-timeline" }
+clawvinci-render = { path = "crates/clawvinci-render" }
+clawvinci-export = { path = "crates/clawvinci-export" }
+clawvinci-mcp = { path = "crates/clawvinci-mcp" }
+clawvinci-audio = { path = "crates/clawvinci-audio" }
+clawvinci-search = { path = "crates/clawvinci-search" }
+clawvinci-gen = { path = "crates/clawvinci-gen" }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }

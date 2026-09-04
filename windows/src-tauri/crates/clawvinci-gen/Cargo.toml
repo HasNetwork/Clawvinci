@@ -1,0 +1,14 @@
+[package]
+name = "clawvinci-gen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Phase 11: Generative AI provider catalog, submission, and edit clients"
+
+[dependencies]
+clawvinci-model = { path = "../clawvinci-model" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
