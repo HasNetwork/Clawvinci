@@ -1,7 +1,7 @@
 # Phase 1.0 — Domain model & project file format
 
 Port `Sources/PalmierPro/Models/*.swift` (3,012 LOC, 21 files, zero Apple
-framework imports) to the `pw-model` Rust crate. This is the highest-leverage
+framework imports) to the `clawvinci-model` Rust crate. This is the highest-leverage
 phase: the project file format and the in-memory timeline representation are
 what every other phase (editing, rendering, export, MCP tools) is built on.
 Get the shape right here and everything downstream translates cleanly; get
@@ -24,27 +24,27 @@ it wrong and every later phase inherits the mistake.
 
 | macOS file | LOC | Rust destination | Notes |
 |---|---|---|---|
-| `Timeline.swift` | 821 | `pw-model::timeline` | `Timeline`, `Track`, `Clip`, `Transform`, `Crop` — the core types. |
-| `TextStyle.swift` | 379 | `pw-model::text_style` | Text rendering style, RGBA. |
-| `Keyframe.swift` | 346 | `pw-model::keyframe` | Generic `Keyframe<T>`/`KeyframeTrack<T>` — needs a Rust generics story (see below). |
-| `MediaAsset.swift` | 338 | `pw-model::media_asset` | Note: this one is `final class` (reference type) in Swift, not a value type — check why before flattening to a Rust struct; likely identity/caching reasons that need a different Rust pattern (`Arc`?). |
-| `VideoLayout.swift` | 125 | `pw-model::layout` | |
-| `TextLayout.swift` | 98 | `pw-model::text_layout` | |
-| `MediaManifest.swift` | 90 | `pw-model::media_manifest` | |
-| `ClipEffectKeyframes.swift` | 90 | `pw-model::keyframe` | |
-| `MediaResolver.swift` | 89 | `pw-model::media_resolver` | Note: `@unchecked Sendable` in Swift — flags manual thread-safety reasoning; read carefully before porting. |
-| `HueCurves.swift` | 80 | `pw-model::grade` | |
-| `Matte.swift` | 76 | `pw-model::matte` | |
-| `TextAnimation.swift` | 73 | `pw-model::text_animation` | |
-| `MulticamSource.swift` | 64 | `pw-model::multicam` | |
-| `TimelineMarker.swift` | 61 | `pw-model::timeline` | |
-| `Effect.swift` | 59 | `pw-model::effect` | |
-| `ClipType.swift` | 54 | `pw-model::clip_type` | |
-| `BlendMode.swift` | 51 | `pw-model::blend_mode` | |
-| `GradeCurve.swift` | 48 | `pw-model::grade` | |
-| `TextFillMode.swift` | 31 | `pw-model::text_style` | |
-| `ProjectFile.swift` | 26 | `pw-model::project_file` | Root of `project.json`; has legacy-format fallback decode — preserve that behavior exactly (see below). |
-| `MediaFolder.swift` | 13 | `pw-model::media_manifest` | |
+| `Timeline.swift` | 821 | `clawvinci-model::timeline` | `Timeline`, `Track`, `Clip`, `Transform`, `Crop` — the core types. |
+| `TextStyle.swift` | 379 | `clawvinci-model::text_style` | Text rendering style, RGBA. |
+| `Keyframe.swift` | 346 | `clawvinci-model::keyframe` | Generic `Keyframe<T>`/`KeyframeTrack<T>` — needs a Rust generics story (see below). |
+| `MediaAsset.swift` | 338 | `clawvinci-model::media_asset` | Note: this one is `final class` (reference type) in Swift, not a value type — check why before flattening to a Rust struct; likely identity/caching reasons that need a different Rust pattern (`Arc`?). |
+| `VideoLayout.swift` | 125 | `clawvinci-model::layout` | |
+| `TextLayout.swift` | 98 | `clawvinci-model::text_layout` | |
+| `MediaManifest.swift` | 90 | `clawvinci-model::media_manifest` | |
+| `ClipEffectKeyframes.swift` | 90 | `clawvinci-model::keyframe` | |
+| `MediaResolver.swift` | 89 | `clawvinci-model::media_resolver` | Note: `@unchecked Sendable` in Swift — flags manual thread-safety reasoning; read carefully before porting. |
+| `HueCurves.swift` | 80 | `clawvinci-model::grade` | |
+| `Matte.swift` | 76 | `clawvinci-model::matte` | |
+| `TextAnimation.swift` | 73 | `clawvinci-model::text_animation` | |
+| `MulticamSource.swift` | 64 | `clawvinci-model::multicam` | |
+| `TimelineMarker.swift` | 61 | `clawvinci-model::timeline` | |
+| `Effect.swift` | 59 | `clawvinci-model::effect` | |
+| `ClipType.swift` | 54 | `clawvinci-model::clip_type` | |
+| `BlendMode.swift` | 51 | `clawvinci-model::blend_mode` | |
+| `GradeCurve.swift` | 48 | `clawvinci-model::grade` | |
+| `TextFillMode.swift` | 31 | `clawvinci-model::text_style` | |
+| `ProjectFile.swift` | 26 | `clawvinci-model::project_file` | Root of `project.json`; has legacy-format fallback decode — preserve that behavior exactly (see below). |
+| `MediaFolder.swift` | 13 | `clawvinci-model::media_manifest` | |
 
 Also read (not ported directly, but governs this phase):
 `Project/VideoProject.swift` (742 LOC) and `Project/ProjectPackageCoordinator.swift`
@@ -91,27 +91,27 @@ on-disk *format* decision belongs here, now.
   Map to `f64`. Check the other two flagged files for the same before
   starting.
 
-## Project file format decision
+## Project file format decision — resolved
 
-Two options, pick one and document the reasoning here once decided —
-**do not implement both**:
+**Byte-identical `.palmier` compatibility** (Decision 9, `PLAN.md`). Same
+`project.json` shape, same package layout, as the macOS app — projects must
+move between platforms. This constrains every field name/shape to match
+Swift's `Codable` output exactly, including the `ProjectFile.decode`
+legacy-fallback edge case (bare-`Timeline`-shaped old projects). No
+`.palmierwin`-style divergent format — don't introduce one later without
+flagging why, per the project's "surface conflicts, don't average them"
+rule.
 
-1. **Byte-identical `.palmier` compatibility**: same `project.json` shape,
-   same package layout, so projects can move between the macOS app and
-   this Windows app. Higher value if cross-platform project sharing
-   matters to the user; constrains every field name/shape to match Swift's
-   `Codable` output exactly, including edge cases in the legacy fallback.
-2. **New `.palmierwin` format**, structurally similar but not required to
-   byte-match, versioned independently. Lower constraint, faster to iterate,
-   but no interop with the macOS app's project files.
-
-This is a product decision, not an engineering one — flag it back to the
-user before writing `pw-model::project_file`, since it changes the
-acceptance criteria for this phase's "done."
+Practical implication: before implementing each type's serde derive,
+capture real JSON output from the actual Swift `Codable` encoder (e.g. a
+throwaway `JSONEncoder` call in a Swift REPL/test, or output from the
+running macOS app) rather than inferring the shape from Swift syntax alone
+— `Codable` synthesis has enum/optional-encoding rules that are easy to
+get subtly wrong by inspection.
 
 ## Definition of done for Phase 1
 
-- `pw-model` crate compiles, with the full type set above.
+- `clawvinci-model` crate compiles, with the full type set above.
 - Round-trip test: for each type, serialize → deserialize → assert
   equality (Rule 9: tests encode intent — the intent here is "this Rust
   type is a faithful re-encoding of the Swift `Codable` contract," so the

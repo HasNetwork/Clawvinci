@@ -30,8 +30,9 @@ separately). Project-specific rules only — explanations of *why* live in
   distribution (e.g. a proprietary SDK with a no-redistribution clause) without
   flagging it — GPLv3 has copyleft implications for what you can link
   against.
-- Don't use "Palmier Pro" branding/name/logo in anything user-facing yet —
-  see the open naming question in `PLAN.md`. Use the working name.
+- Ship under the "Clawvinci" name (Decision 5, `PLAN.md`). Never use
+  "Palmier Pro" branding/name/logo anywhere user-facing — it's proprietary
+  to Palmier, Inc. even though this source is GPLv3.
 
 ## Translating from the Swift reference
 
