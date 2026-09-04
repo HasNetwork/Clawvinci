@@ -64,36 +64,62 @@ New Windows-port code lives in a new top-level layout defined in
 - `Agent/` is the largest single area (16,684 LOC, 57 files) — the in-app
   agent chat/panel plus the 53-tool MCP executor. The tool executor itself
   is portable logic; the chat UI is not.
+- `Transcription/` is **not on-device ML** — despite living next to the
+  search/visual-embedding code, `TranscriptionBackend.swift` submits jobs
+  to a cloud (Convex) backend and subscribes to results; there's no local
+  Whisper-class model to port. The actual on-device ML footprint in the
+  whole app is narrow and concrete: `beat_this` (beat detection) and
+  SigLIP2 (visual search embedding), both already documented in
+  `models/` with a PyTorch→CoreML conversion pipeline that re-targets to
+  ONNX with modest extra work — see `PLAN/9-0-audio-analysis.md` and
+  `PLAN/10-0-search-transcription-ml.md`. Apple's system `Speech`/
+  `SpeechVAD`/`SpeechEnhancement` frameworks (voice activity, speaker ID,
+  denoise) are the one area with no bundled model to re-export — flagged
+  as an open per-feature decision in Phase 9, not silently assumed.
 
 ## Phase index
 
-Each phase becomes a detailed doc in `PLAN/` when it is up next — writing
-all of them now would be speculative (Rule 2/AGENTS.md "grow in layers").
-Phase 0 and 1 are detailed now because they're immediately actionable and
-every later phase depends on their output.
+Every phase is now detailed (the user asked for full planning up front
+rather than the phase-by-phase "grow in layers" default). Phases 2-13
+were written from a second pass over the actual source — file inventories,
+LOC, and representative file reads for each area — not from the
+architecture-scan summary alone; each doc cites the real macOS files it's
+grounded in.
 
-| Phase | Scope | Doc | Status |
-|---|---|---|---|
-| 0 | Foundation: repo layout, toolchain, CI, licensing carryover | [`PLAN/0-0-foundation.md`](PLAN/0-0-foundation.md) | **Detailed — ready to start** |
-| 1 | Domain model & project file format (Rust structs, serde, byte-compatible `.palmier` package format) | [`PLAN/1-0-domain-model.md`](PLAN/1-0-domain-model.md) | **Detailed — ready to start** |
-| 2 | Media engine: FFmpeg decode/encode wrapper, probing, thumbnails, waveforms | — | Not yet detailed |
-| 3 | Timeline editing core: clip/track mutation ops, ripple/trim/split, shared undo history (mirrors "Editor mutations and undo" rule) | — | Not yet detailed |
-| 4 | Preview/playback engine: GPU compositor, frame scheduling, audio scrub engine, A/V sync | — | Not yet detailed |
-| 5 | GPU effects pipeline: port 12 Metal kernels → WGSL, `EffectRegistry`, LUTs, color wheels/curves, text rendering & animation | — | Not yet detailed |
-| 6 | UI shell (Tauri/web): timeline view, inspector, media panel, preview canvas, design-token system (`AppTheme` equivalent) | — | Not yet detailed |
-| 7 | Export: FCPXML + native XML exporters, export queue, HDR export, project export | — | Not yet detailed |
-| 8 | MCP agent layer: HTTP MCP server on Windows, port all 53 tools (`Agent/Tools/ToolExecutor+*.swift`) | — | Not yet detailed |
-| 9 | Audio analysis: beat detection, voice activity, speaker ID, silence removal, audio metering | — | Not yet detailed |
-| 10 | Search/transcription/ML: transcription backend, embedding store, visual search — replace CoreML/MLX with ONNX Runtime | — | Not yet detailed |
-| 11 | Generative AI integration: provider submission/catalog/edit clients (mostly portable REST logic) | — | Not yet detailed |
-| 12 | Auth/backend/telemetry/updater: Clerk/Convex equivalents, Sentry/PostHog (both have Rust/JS SDKs), Windows updater replacing Sparkle | — | Not yet detailed |
-| 13 | Polish: localization, settings UI, home/onboarding, in-app help | — | Not yet detailed |
+| Phase | Scope | Doc |
+|---|---|---|
+| 0 | Foundation: repo layout, toolchain, CI, licensing carryover | [`PLAN/0-0-foundation.md`](PLAN/0-0-foundation.md) |
+| 1 | Domain model & byte-compatible `.palmier` project file format | [`PLAN/1-0-domain-model.md`](PLAN/1-0-domain-model.md) |
+| 2 | Media engine: FFmpeg decode/encode/probe, thumbnails, waveforms | [`PLAN/2-0-media-engine.md`](PLAN/2-0-media-engine.md) |
+| 3 | Timeline editing core: clip/track mutation ops, ripple/overwrite, shared undo history | [`PLAN/3-0-timeline-editing-core.md`](PLAN/3-0-timeline-editing-core.md) |
+| 4 | Preview/playback engine: render-graph builder, real-time A/V playback, scrub | [`PLAN/4-0-playback-engine.md`](PLAN/4-0-playback-engine.md) |
+| 5 | GPU effects pipeline: 12 Metal kernels → WGSL, `EffectRegistry`, LUTs, text rendering & animation | [`PLAN/5-0-gpu-effects.md`](PLAN/5-0-gpu-effects.md) |
+| 6 | UI shell (Tauri/web): timeline canvas, inspector, media panel, design tokens, IPC surface | [`PLAN/6-0-ui-shell.md`](PLAN/6-0-ui-shell.md) |
+| 7 | Export: FCPXML + native XML exporters, export queue, HDR export, project bundle export | [`PLAN/7-0-export.md`](PLAN/7-0-export.md) |
+| 8 | MCP agent layer: HTTP MCP server, all 53 tools, in-app agent chat orchestration | [`PLAN/8-0-mcp-agent-layer.md`](PLAN/8-0-mcp-agent-layer.md) |
+| 9 | Audio analysis: beat detection (ONNX), sync, silence removal, metering; VAD/speaker-ID/enhancement flagged open | [`PLAN/9-0-audio-analysis.md`](PLAN/9-0-audio-analysis.md) |
+| 10 | Search & transcription: SigLIP2 visual search (ONNX), transcript search — transcription itself is a cloud API client | [`PLAN/10-0-search-transcription-ml.md`](PLAN/10-0-search-transcription-ml.md) |
+| 11 | Generative AI integration: provider catalog/submission/edit clients, preprocessing | [`PLAN/11-0-generative-ai.md`](PLAN/11-0-generative-ai.md) |
+| 12 | Auth/backend/telemetry/updater: Clerk auth (needs a scoping decision), Convex client, Sentry/PostHog, Tauri updater | [`PLAN/12-0-auth-backend-telemetry-updater.md`](PLAN/12-0-auth-backend-telemetry-updater.md) |
+| 13 | Polish: localization, settings panes, home/onboarding, in-app help | [`PLAN/13-0-polish.md`](PLAN/13-0-polish.md) |
 
 Phases 2–4 are the critical path (nothing plays back or exports without
 them) and the highest technical risk (FFmpeg↔Rust↔wgpu↔Tauri frame
-pipeline, hitting 60fps scrub). Recommend prototyping the playback path
-end-to-end (decode one clip → composite → present in a Tauri window) before
-committing to the full Phase 3 timeline data model.
+pipeline, hitting interactive scrub rates, and — per Phase 4 — no
+off-the-shelf equivalent to AVFoundation's composition objects). Phase
+4's doc calls out a specific prototype to build *before* committing to
+Phase 3's data shapes: decode one clip → trivial composite → present in a
+Tauri window → confirm A/V-synced playback and scrub actually work. Do
+that prototype early regardless of numeric phase order — it's the
+riskiest unproven technical assumption in the whole plan.
+
+A few phases carry an explicit open decision that needs the user's input
+*when that phase starts*, not now (deferring per Rule 2 — these are
+concrete only once their phase is actually being built): Phase 9's
+VAD/speaker-ID/speech-enhancement model replacement, Phase 12's Clerk
+auth integration approach on Windows, and Phase 1's exact JSON-shape
+capture method. Each is called out in its phase doc; none blocks earlier
+phases.
 
 All open questions from the original scan (branding, OS floor, GPU backend,
 CI) are resolved — see decisions 5–8 above. Nothing is blocking Phase 0.

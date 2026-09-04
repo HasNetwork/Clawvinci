@@ -115,10 +115,23 @@ different mechanism:
 - Don't build a phase's abstraction ahead of the phase that needs it (e.g.
   don't design the effects-pipeline trait system while doing Phase 1
   domain models). Each phase doc's "Definition of done" is the scope
-  boundary for that phase's work.
-- Don't detail phase docs for phases that aren't next — write a phase doc
-  when that phase is about to start, informed by what the previous phases
-  actually produced, not speculatively now.
+  boundary for that phase's work — this applies to *code*, not to the
+  planning docs themselves (all 13 phases are already detailed in
+  `PLAN/`, at the user's request, so writing ahead doesn't apply to
+  planning going forward).
+- When a phase's actual implementation surfaces something its doc got
+  wrong or didn't anticipate (a Rust crate that doesn't exist as assumed,
+  a Swift behavior that reads differently once you're actually porting
+  it), update that phase's `PLAN/*.md` doc to match reality before or
+  alongside implementing — don't let the doc silently drift out of sync
+  with the code. Note the correction's reasoning in the `HISTORY.md` log
+  entry for that subphase.
+- If a phase's doc turns out to need splitting into subphases once work
+  starts (e.g. Phase 6 UI shell is large enough that "6.1 design tokens,"
+  "6.2 timeline canvas," "6.3 inspector" might make more sense than one
+  monolithic 6.0), that split itself follows Rule 2 — do it when the
+  phase is actually starting and the natural seams are concrete, not
+  speculatively now.
 
 ## Verification
 
