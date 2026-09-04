@@ -5,7 +5,9 @@
 use crate::blend_mode::BlendMode;
 use crate::clip_type::ClipType;
 use crate::effect::Effect;
-use crate::keyframe::{AnimPair, Interpolation, KeyframeTrack};
+use crate::keyframe::{
+    smoothstep, AnimPair, Interpolation, KeyframeInterpolatable, KeyframeTrack,
+};
 use crate::text_animation::{TextAnimation, WordTiming};
 use crate::text_fill_mode::TextFillMode;
 use crate::text_style::TextStyle;
