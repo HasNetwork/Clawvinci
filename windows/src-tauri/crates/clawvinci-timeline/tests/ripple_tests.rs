@@ -74,7 +74,7 @@ fn test_ripple_delete_sync_locked_tracks() {
     let mut a1 = Track::new(ClipType::Audio);
     a1.sync_locked = true;
     let a_clip1 = Clip::new("a-asset-1", 0, 50);
-    let a_clip2 = Clip::new("a-asset-2", 60, 80);
+    let a_clip2 = Clip::new("a-asset-2", 110, 80); // starts after the removed range [50,100)
     let a_clip2_id = a_clip2.id.clone();
     a1.clips = vec![a_clip1, a_clip2];
 
@@ -92,10 +92,10 @@ fn test_ripple_delete_sync_locked_tracks() {
     assert_eq!(tl.tracks[0].clips.len(), 2);
     assert_eq!(tl.tracks[0].clips[1].start_frame, 50);
 
-    // In A1, because sync_locked is true, clips after frame 50 shifted left by 50 frames
+    // In A1, because sync_locked is true, clips after the removed range shifted left by 50 frames
     assert_eq!(tl.tracks[1].clips.len(), 2);
     let shifted_a_clip = tl.tracks[1].clips.iter().find(|c| c.id == a_clip2_id).unwrap();
-    assert_eq!(shifted_a_clip.start_frame, 10); // 60 - 50 = 10
+    assert_eq!(shifted_a_clip.start_frame, 60); // 110 - 50 = 60
 }
 
 #[test]
