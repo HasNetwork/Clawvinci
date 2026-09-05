@@ -25,11 +25,11 @@ fn test_split_clip_with_keyframes() {
     assert_eq!(left.start_frame, 0);
     assert_eq!(left.duration_frames, 50);
     let left_op = left.opacity_track.unwrap();
-    // Keyframes at 0, 40, and split boundary at 50
+    // Keyframes at 0, 40, and split boundary clamped to last frame (duration - 1 = 49)
     assert_eq!(left_op.keyframes.len(), 3);
     assert_eq!(left_op.keyframes[0].frame, 0);
     assert_eq!(left_op.keyframes[1].frame, 40);
-    assert_eq!(left_op.keyframes[2].frame, 50);
+    assert_eq!(left_op.keyframes[2].frame, 49);
 
     // Right clip [50, 100) -> rebased to 0..50
     assert_eq!(right.start_frame, 50);
