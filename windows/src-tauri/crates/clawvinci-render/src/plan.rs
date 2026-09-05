@@ -244,7 +244,7 @@ impl CompositionBuilder {
             ClipType::Image => LayerSource::Image {
                 media_ref: clip.media_ref.clone(),
             },
-            ClipType::NestedTimeline => {
+            ClipType::Sequence => {
                 if let Some(nested) = resolve_nested_timeline(&clip.media_ref) {
                     let sub_plan = Self::build_frame_plan_with_resolvers(
                         nested,

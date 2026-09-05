@@ -189,7 +189,7 @@ fn test_frame_plan_nested_sequence() {
 
     let mut nest_carrier = Clip::new("nest-sequence-1", 0, 100);
     nest_carrier.id = "nest-carrier-clip".into();
-    nest_carrier.media_type = ClipType::NestedTimeline;
+    nest_carrier.media_type = ClipType::Sequence;
     main_track.clips.push(nest_carrier);
     main_timeline.tracks.push(main_track);
 
