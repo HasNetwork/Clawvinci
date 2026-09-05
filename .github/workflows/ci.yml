@@ -42,6 +42,11 @@ jobs:
         working-directory: windows
         run: npm install
 
+      - name: Setup FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          ffmpeg-version: release
+
       - name: Cargo Check Workspace
         working-directory: windows/src-tauri
         run: cargo check --workspace
