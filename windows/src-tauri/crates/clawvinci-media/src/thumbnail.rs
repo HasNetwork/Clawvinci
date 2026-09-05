@@ -75,8 +75,8 @@ impl ThumbnailCache {
         }
     }
 
-    pub async fn get(&self, key: &CacheKey) -> Option<Vec<u8>> {
-        let mut entries = self.entries.lock().await;
+    async fn get(&self, key: &CacheKey) -> Option<Vec<u8>> {
+        let entries = self.entries.lock().await;
         if let Some(val) = entries.get(key) {
             let mut lru = self.lru_order.lock().await;
             if let Some(pos) = lru.iter().position(|k| k == key) {
@@ -89,7 +89,7 @@ impl ThumbnailCache {
         }
     }
 
-    pub async fn insert(&self, key: CacheKey, data: Vec<u8>) {
+    async fn insert(&self, key: CacheKey, data: Vec<u8>) {
         let mut entries = self.entries.lock().await;
         let mut lru = self.lru_order.lock().await;
 

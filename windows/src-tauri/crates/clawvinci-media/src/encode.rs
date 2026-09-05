@@ -93,7 +93,7 @@ impl VideoStreamWriter {
         }
 
         // Fast start for web streaming
-        if output_path.extension().map_or(false, |ext| ext == "mp4") {
+        if output_path.extension().is_some_and(|ext| ext == "mp4") {
             cmd.arg("-movflags").arg("+faststart");
             cmd.arg("-pix_fmt").arg("yuv420p");
         }
