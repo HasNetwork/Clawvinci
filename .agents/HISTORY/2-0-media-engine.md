@@ -34,7 +34,8 @@ Executed Phase 2.0 per `PLAN/2-0-media-engine.md` and approved `implementation_p
 ## Verification
 
 - **Remote CI Run**:
-  - Run ID: [33945621910](https://github.com/HasNetwork/Clawvinci/actions/runs/33945621910) (Job ID 101251036433) completed successfully in 10m45s on `windows-latest`.
+  - Run ID: [33946810414](https://github.com/HasNetwork/Clawvinci/actions/runs/33946810414) (Job ID 101254290184) completed successfully in 3m40s on `windows-latest`.
+  - Prior Run Note: Intermediate run [33946459663](https://github.com/HasNetwork/Clawvinci/actions/runs/33946459663) failed in `test_concurrency_limiter_immediate_cancellation` due to an unbiased `tokio::select!` polling a ready semaphore/task branch before checking cancellation. Resolved in commit `6d33483` by adding a pre-check `if token.is_cancelled()` and `biased;` selection.
   - `cargo check --workspace`: Passed.
   - `cargo clippy --workspace -- -D warnings`: Passed (0 warnings).
   - `cargo test --workspace`: Passed (**32/32 tests passed**):
