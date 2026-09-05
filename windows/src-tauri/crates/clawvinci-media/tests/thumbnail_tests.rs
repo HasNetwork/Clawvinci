@@ -16,6 +16,11 @@ async fn test_thumbnail_cache_insertion_and_retrieval() {
     let opts3 = ThumbnailOptions::at_time(2.0).with_size(320, 180);
     let opts4 = ThumbnailOptions::at_time(3.0).with_size(320, 180);
 
+    let data1 = vec![1, 2, 3, 4];
+    let data2 = vec![5, 6, 7, 8];
+    let data3 = vec![9, 10, 11, 12];
+    let data4 = vec![13, 14, 15, 16];
+
     let asset_id = "asset-001";
     cache.insert_thumbnail(asset_id, &opts1, data1.clone()).await;
     cache.insert_thumbnail(asset_id, &opts2, data2.clone()).await;
