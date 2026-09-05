@@ -4,7 +4,7 @@
 use clawvinci_model::clip_type::ClipType;
 use clawvinci_model::timeline::{Clip, Timeline, Track};
 use clawvinci_timeline::editor::TimelineEditor;
-use clawvinci_timeline::overwrite::{clear_region, compute_overwrite, OverwriteAction};
+use clawvinci_timeline::overwrite::{compute_overwrite, OverwriteAction};
 
 #[test]
 fn test_compute_overwrite_actions() {
@@ -15,17 +15,16 @@ fn test_compute_overwrite_actions() {
     assert_eq!(actions, vec![OverwriteAction::Remove { clip_id: clip.id.clone() }]);
 
     // 2. Overlaps left: [80, 140) -> Trims end of left portion?
-    // Wait, region is [80, 140). Clip is [100, 200).
-    // cs = 100, ce = 200, regionStart = 80, regionEnd = 140.
+    // region is [80, 140). Clip is [100, 200).
     // cs (100) >= regionStart (80), and ce (200) > regionEnd (140).
-    // That overlaps the clip's left side (right side of the region), so clip's start is trimmed: TrimStart!
+    // That overlaps the clip's left side, so clip's start is trimmed: TrimStart!
     let actions2 = compute_overwrite(&[clip.clone()], 80, 140);
     assert_eq!(actions2.len(), 1);
-    match &actions2[0] {
+    match actions2[0].clone() {
         OverwriteAction::TrimStart { clip_id, new_start_frame, new_duration, .. } => {
-            assert_eq!(clip_id, &clip.id);
-            assert_eq!(*new_start_frame, 140);
-            assert_eq!(*new_duration, 60);
+            assert_eq!(clip_id, clip.id);
+            assert_eq!(new_start_frame, 140);
+            assert_eq!(new_duration, 60);
         }
         other => panic!("Expected TrimStart, got {:?}", other),
     }
@@ -35,10 +34,10 @@ fn test_compute_overwrite_actions() {
     // cs < regionStart, ce <= regionEnd -> TrimEnd
     let actions3 = compute_overwrite(&[clip.clone()], 160, 220);
     assert_eq!(actions3.len(), 1);
-    match &actions3[0] {
+    match actions3[0].clone() {
         OverwriteAction::TrimEnd { clip_id, new_duration } => {
-            assert_eq!(clip_id, &clip.id);
-            assert_eq!(*new_duration, 60); // 160 - 100 = 60
+            assert_eq!(clip_id, clip.id);
+            assert_eq!(new_duration, 60); // 160 - 100 = 60
         }
         other => panic!("Expected TrimEnd, got {:?}", other),
     }
@@ -46,12 +45,12 @@ fn test_compute_overwrite_actions() {
     // 4. Middle punch: region [130, 170) -> Split
     let actions4 = compute_overwrite(&[clip.clone()], 130, 170);
     assert_eq!(actions4.len(), 1);
-    match &actions4[0] {
+    match actions4[0].clone() {
         OverwriteAction::Split { clip_id, left_duration, right_start_frame, right_duration, .. } => {
-            assert_eq!(clip_id, &clip.id);
-            assert_eq!(*left_duration, 30); // 130 - 100 = 30
-            assert_eq!(*right_start_frame, 170);
-            assert_eq!(*right_duration, 30); // 200 - 170 = 30
+            assert_eq!(clip_id, clip.id);
+            assert_eq!(left_duration, 30); // 130 - 100 = 30
+            assert_eq!(right_start_frame, 170);
+            assert_eq!(right_duration, 30); // 200 - 170 = 30
         }
         other => panic!("Expected Split, got {:?}", other),
     }
