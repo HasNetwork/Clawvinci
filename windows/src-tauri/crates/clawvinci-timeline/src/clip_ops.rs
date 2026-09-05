@@ -8,9 +8,24 @@ use crate::ripple::TrimEdge;
 use clawvinci_model::keyframe::{
     AnimPair, Interpolation, Keyframe, KeyframeInterpolatable, KeyframeTrack,
 };
-use clawvinci_model::timeline::{Clip, Timeline};
+use clawvinci_model::timeline::{Clip, ClipLocation, Timeline};
 use std::collections::HashSet;
 use uuid::Uuid;
+
+/// Locates a clip across all tracks by ID.
+pub fn find_clip(timeline: &Timeline, clip_id: &str) -> Option<ClipLocation> {
+    for (t_idx, track) in timeline.tracks.iter().enumerate() {
+        for (c_idx, clip) in track.clips.iter().enumerate() {
+            if clip.id == clip_id {
+                return Some(ClipLocation {
+                    track_index: t_idx,
+                    clip_index: c_idx,
+                });
+            }
+        }
+    }
+    None
+}
 
 /// Splits a generic keyframe track at `split_offset`, keeping both halves continuous.
 pub fn split_keyframe_track<V: KeyframeInterpolatable + PartialEq + Clone>(
@@ -83,7 +98,7 @@ pub fn split_values(clip: &Clip, at_frame: i64) -> Result<(Clip, Clip), Timeline
     left.volume_track = left_vol;
     right.volume_track = right_vol;
 
-    let (left_rot, right_rot) = split_keyframe_track(&clip.rotation_track, split_offset, clip.rotation);
+    let (left_rot, right_rot) = split_keyframe_track(&clip.rotation_track, split_offset, clip.transform.rotation);
     left.rotation_track = left_rot;
     right.rotation_track = right_rot;
 
@@ -106,7 +121,7 @@ pub fn split_values(clip: &Clip, at_frame: i64) -> Result<(Clip, Clip), Timeline
 /// Splits `clip_id` and all its linked partners at `at_frame`.
 /// Returns the IDs of the right-half clips created by the split.
 pub fn split_clip(timeline: &mut Timeline, clip_id: &str, at_frame: i64) -> Result<Vec<String>, TimelineError> {
-    let loc = timeline.find_clip(clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.to_string()))?;
+    let loc = find_clip(timeline, clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.to_string()))?;
     let clip = &timeline.tracks[loc.track_index].clips[loc.clip_index];
 
     if at_frame <= clip.start_frame || at_frame >= clip.end_frame() {
@@ -138,7 +153,7 @@ pub fn split_clip(timeline: &mut Timeline, clip_id: &str, at_frame: i64) -> Resu
     };
 
     for target_id in &group_ids {
-        if let Some(target_loc) = timeline.find_clip(target_id) {
+        if let Some(target_loc) = find_clip(timeline, target_id) {
             let target_clip = &timeline.tracks[target_loc.track_index].clips[target_loc.clip_index];
             let (left, mut right) = split_values(target_clip, at_frame)?;
 
@@ -169,7 +184,7 @@ pub fn trim_clip(
         return Ok(());
     }
 
-    let loc = timeline.find_clip(clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.to_string()))?;
+    let loc = find_clip(timeline, clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.to_string()))?;
     let clip = &mut timeline.tracks[loc.track_index].clips[loc.clip_index];
     let unbounded = clip.media_type.is_visual() && !clip.media_type.is_container();
     let speed = clip.speed.max(0.001);
@@ -194,13 +209,13 @@ pub fn trim_clip(
             clip.fade_in_frames = 0;
 
             if let Some(t) = &clip.opacity_track {
-                clip.opacity_track = Some(t.rebased(delta, clip.opacity));
+                clip.opacity_track = t.rebased(delta, clip.opacity);
             }
             if let Some(t) = &clip.volume_track {
-                clip.volume_track = Some(t.rebased(delta, clip.volume));
+                clip.volume_track = t.rebased(delta, clip.volume);
             }
             if let Some(t) = &clip.rotation_track {
-                clip.rotation_track = Some(t.rebased(delta, clip.rotation));
+                clip.rotation_track = t.rebased(delta, clip.transform.rotation);
             }
         }
         TrimEdge::Right => {
@@ -233,7 +248,7 @@ pub fn slip_clip(timeline: &mut Timeline, clip_id: &str, delta: i64) -> Result<(
         return Ok(());
     }
 
-    let loc = timeline.find_clip(clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.to_string()))?;
+    let loc = find_clip(timeline, clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.to_string()))?;
     let clip = &mut timeline.tracks[loc.track_index].clips[loc.clip_index];
     let unbounded = clip.media_type.is_visual() && !clip.media_type.is_container();
     let speed = clip.speed.max(0.001);
@@ -262,7 +277,7 @@ pub fn set_clip_speed(
         return Err(TimelineError::InvalidSpeed(new_speed));
     }
 
-    let loc = timeline.find_clip(clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.to_string()))?;
+    let loc = find_clip(timeline, clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.to_string()))?;
     let clip = &timeline.tracks[loc.track_index].clips[loc.clip_index];
 
     if clip.multicam_group_id.is_some() {
@@ -322,7 +337,7 @@ pub fn move_clips(
     // Validate track indices and compatibility
     let mut clip_moves = Vec::new();
     for (clip_id, to_track, to_frame) in moves {
-        let loc = timeline.find_clip(clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.clone()))?;
+        let loc = find_clip(timeline, clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.clone()))?;
         if *to_track >= timeline.tracks.len() {
             return Err(TimelineError::TrackNotFound(*to_track));
         }

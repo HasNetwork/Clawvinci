@@ -11,7 +11,7 @@ pub mod track_ops;
 pub mod undo;
 
 pub mod prelude {
-    pub use crate::clip_ops::{move_clips, remove_clips, slip_clip, split_clip, trim_clip};
+    pub use crate::clip_ops::{find_clip, move_clips, remove_clips, slip_clip, split_clip, trim_clip};
     pub use crate::editor::TimelineEditor;
     pub use crate::error::TimelineError;
     pub use crate::overwrite::{clear_region, overwrite_clip, OverwriteAction, OverwriteEngine};

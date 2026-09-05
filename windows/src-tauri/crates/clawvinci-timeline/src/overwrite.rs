@@ -148,13 +148,13 @@ pub fn clear_region(track: &mut Track, region_start: i64, region_end: i64) {
 
                     // Rebase keyframe tracks
                     if let Some(track) = &c.opacity_track {
-                        c.opacity_track = Some(track.rebased(offset, c.opacity));
+                        c.opacity_track = track.rebased(offset, c.opacity);
                     }
                     if let Some(track) = &c.volume_track {
-                        c.volume_track = Some(track.rebased(offset, c.volume));
+                        c.volume_track = track.rebased(offset, c.volume);
                     }
                     if let Some(track) = &c.rotation_track {
-                        c.rotation_track = Some(track.rebased(offset, c.rotation));
+                        c.rotation_track = track.rebased(offset, c.transform.rotation);
                     }
                     c.clamp_keyframes_to_duration();
                 }
@@ -177,13 +177,13 @@ pub fn clear_region(track: &mut Track, region_start: i64, region_end: i64) {
 
                     let split_offset = right_start_frame - c.start_frame;
                     if let Some(t) = &right.opacity_track {
-                        right.opacity_track = Some(t.rebased(split_offset, right.opacity));
+                        right.opacity_track = t.rebased(split_offset, right.opacity);
                     }
                     if let Some(t) = &right.volume_track {
-                        right.volume_track = Some(t.rebased(split_offset, right.volume));
+                        right.volume_track = t.rebased(split_offset, right.volume);
                     }
                     if let Some(t) = &right.rotation_track {
-                        right.rotation_track = Some(t.rebased(split_offset, right.rotation));
+                        right.rotation_track = t.rebased(split_offset, right.transform.rotation);
                     }
                     right.clamp_fades_to_duration();
                     right.clamp_keyframes_to_duration();
