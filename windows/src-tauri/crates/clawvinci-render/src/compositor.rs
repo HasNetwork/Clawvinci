@@ -79,7 +79,7 @@ fn composite_layer(
                 width: 2,
                 height: 2,
                 frame_index: 0,
-                data: vec![240, 240, 245, 255; 4],
+                data: vec![240, 240, 245, 255].repeat(4),
             };
             return composite_rendered_frame(canvas, canvas_w, canvas_h, layer, &text_buf);
         }
