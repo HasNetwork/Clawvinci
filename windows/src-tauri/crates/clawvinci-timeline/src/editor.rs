@@ -59,6 +59,18 @@ impl TimelineEditor {
         self.undo_stack.can_redo()
     }
 
+    /// Executes closure `work` with undo recording temporarily disabled.
+    pub fn without_undo<F, R>(&mut self, work: F) -> R
+    where
+        F: FnOnce(&mut Self) -> R,
+    {
+        let prev = self.undo_stack.is_registration_enabled();
+        self.undo_stack.set_registration_enabled(false);
+        let res = work(self);
+        self.undo_stack.set_registration_enabled(prev);
+        res
+    }
+
     pub fn undo_action_name(&self) -> Option<&str> {
         self.undo_stack.undo_action_name()
     }

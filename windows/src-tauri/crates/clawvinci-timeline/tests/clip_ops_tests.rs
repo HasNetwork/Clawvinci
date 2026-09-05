@@ -4,7 +4,7 @@
 use clawvinci_model::clip_type::ClipType;
 use clawvinci_model::keyframe::{Interpolation, Keyframe, KeyframeTrack};
 use clawvinci_model::timeline::{Clip, Timeline, Track};
-use clawvinci_timeline::clip_ops::{split_clip, split_values};
+use clawvinci_timeline::clip_ops::split_values;
 use clawvinci_timeline::editor::TimelineEditor;
 use clawvinci_timeline::error::TimelineError;
 use clawvinci_timeline::ripple::TrimEdge;

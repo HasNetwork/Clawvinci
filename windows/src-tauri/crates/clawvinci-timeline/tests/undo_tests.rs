@@ -4,7 +4,6 @@
 use clawvinci_model::clip_type::ClipType;
 use clawvinci_model::timeline::{Clip, Timeline, Track};
 use clawvinci_timeline::editor::TimelineEditor;
-use clawvinci_timeline::error::TimelineError;
 use clawvinci_timeline::ripple::TrimEdge;
 use std::collections::HashSet;
 
@@ -134,17 +133,11 @@ fn test_without_undo_disables_recording() {
     let mut editor = TimelineEditor::new(initial);
 
     let cid = editor.timeline().tracks[0].clips[0].id.clone();
-    editor.undo_stack_mut().without_undo(|_| {
-        // Internal edit without recording
+
+    editor.without_undo(|ed| {
+        let _ = ed.trim_clip(&cid, TrimEdge::Right, 15);
     });
 
-    let res = editor.undo_stack_mut().without_undo(|stack| {
-        stack.begin_transaction("Hidden", editor.timeline());
-        let _ = clawvinci_timeline::clip_ops::trim_clip(editor.timeline_mut(), &cid, TrimEdge::Right, 15);
-        stack.commit_transaction(editor.timeline())
-    });
-
-    assert!(!res); // Did not record
     assert_eq!(editor.undo_stack().undo_count(), 0);
     assert!(!editor.can_undo());
 }

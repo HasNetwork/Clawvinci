@@ -25,7 +25,7 @@ fn test_merge_ranges() {
 
 #[test]
 fn test_compute_ripple_shifts() {
-    let mut clips = vec![
+    let clips = vec![
         Clip::new("c1", 0, 50),
         Clip::new("c2", 50, 50),
         Clip::new("c3", 100, 50),

@@ -51,6 +51,10 @@ impl UndoStack {
         self.registration_enabled = enabled;
     }
 
+    pub fn is_registration_enabled(&self) -> bool {
+        self.registration_enabled
+    }
+
     pub fn can_undo(&self) -> bool {
         !self.undo_entries.is_empty() && self.nesting_level == 0
     }

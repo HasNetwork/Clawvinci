@@ -4,7 +4,6 @@
 use clawvinci_model::clip_type::ClipType;
 use clawvinci_model::timeline::{Clip, Timeline, Track};
 use clawvinci_timeline::editor::TimelineEditor;
-use clawvinci_timeline::error::TimelineError;
 use clawvinci_timeline::track_ops::TrackName;
 
 #[test]
