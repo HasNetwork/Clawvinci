@@ -25,12 +25,8 @@ pub fn composite_frame(
     }
 
     let mut canvas = vec![0u8; (width * height * 4) as usize];
-    // Fill canvas with opaque black background (R=0, G=0, B=0, A=255)
-    for chunk in canvas.chunks_exact_mut(4) {
-        chunk[0] = 0;
-        chunk[1] = 0;
-        chunk[2] = 0;
-        chunk[3] = 255;
+    for chunk in canvas.as_chunks_mut::<4>().0 {
+        *chunk = [0, 0, 0, 255];
     }
 
     for layer in &plan.layers {
@@ -79,7 +75,7 @@ fn composite_layer(
                 width: 2,
                 height: 2,
                 frame_index: 0,
-                data: vec![240, 240, 245, 255].repeat(4),
+                data: [240, 240, 245, 255].repeat(4),
             };
             return composite_rendered_frame(canvas, canvas_w, canvas_h, layer, &text_buf);
         }

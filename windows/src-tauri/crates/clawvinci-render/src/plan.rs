@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 /// Source description for a visual layer in the composition.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
+#[allow(clippy::large_enum_variant)]
 pub enum LayerSource {
     Video {
         media_ref: String,
@@ -205,6 +206,7 @@ impl CompositionBuilder {
         Ok(plans)
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn build_layer_plan<FSize, FNest>(
         clip: &Clip,
         track_idx: usize,
