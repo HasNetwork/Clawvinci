@@ -5,12 +5,33 @@
 
 use crate::error::TimelineError;
 use crate::ripple::TrimEdge;
+use clawvinci_model::clip_type::ClipType;
 use clawvinci_model::keyframe::{
     AnimPair, Interpolation, Keyframe, KeyframeInterpolatable, KeyframeTrack,
 };
 use clawvinci_model::timeline::{Clip, ClipLocation, Timeline};
 use std::collections::HashSet;
 use uuid::Uuid;
+
+fn rescale_keyframes(clip: &mut Clip, scale: f64) {
+    fn rescale_track<V: KeyframeInterpolatable + PartialEq>(
+        track: Option<KeyframeTrack<V>>,
+        scale: f64,
+    ) -> Option<KeyframeTrack<V>> {
+        let mut track = track?;
+        for kf in &mut track.keyframes {
+            kf.frame = ((kf.frame as f64) * scale).round() as i64;
+        }
+        Some(track)
+    }
+
+    clip.opacity_track = rescale_track(clip.opacity_track.take(), scale);
+    clip.position_track = rescale_track(clip.position_track.take(), scale);
+    clip.scale_track = rescale_track(clip.scale_track.take(), scale);
+    clip.rotation_track = rescale_track(clip.rotation_track.take(), scale);
+    clip.crop_track = rescale_track(clip.crop_track.take(), scale);
+    clip.volume_track = rescale_track(clip.volume_track.take(), scale);
+}
 
 /// Locates a clip across all tracks by ID.
 pub fn find_clip(timeline: &Timeline, clip_id: &str) -> Option<ClipLocation> {
@@ -186,7 +207,7 @@ pub fn trim_clip(
 
     let loc = find_clip(timeline, clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.to_string()))?;
     let clip = &mut timeline.tracks[loc.track_index].clips[loc.clip_index];
-    let unbounded = clip.media_type.is_visual() && !clip.media_type.is_container();
+    let unbounded = matches!(clip.media_type, ClipType::Image | ClipType::Text);
     let speed = clip.speed.max(0.001);
     let source_delta = ((delta as f64) * speed).round() as i64;
 
@@ -250,7 +271,7 @@ pub fn slip_clip(timeline: &mut Timeline, clip_id: &str, delta: i64) -> Result<(
 
     let loc = find_clip(timeline, clip_id).ok_or_else(|| TimelineError::ClipNotFound(clip_id.to_string()))?;
     let clip = &mut timeline.tracks[loc.track_index].clips[loc.clip_index];
-    let unbounded = clip.media_type.is_visual() && !clip.media_type.is_container();
+    let unbounded = matches!(clip.media_type, ClipType::Image | ClipType::Text);
     let speed = clip.speed.max(0.001);
     let source_delta = ((delta as f64) * speed).round() as i64;
 
@@ -296,7 +317,7 @@ pub fn set_clip_speed(
 
     // Rescale keyframes
     let scale_factor = (new_duration as f64) / (old_duration.max(1) as f64);
-    c.rescale_keyframes(scale_factor);
+    rescale_keyframes(c, scale_factor);
     c.clamp_keyframes_to_duration();
     c.clamp_fades_to_duration();
 
