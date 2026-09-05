@@ -7,3 +7,4 @@ immediately after that subphase's commit.
 |---|---|---|---|
 | 0 | 0.0 | Foundation: Windows layout, Cargo workspace, 9 crates, Tauri v2 shell, CI | [`0-0-foundation.md`](HISTORY/0-0-foundation.md) |
 | 1 | 1.0 | Domain model: 21 models ported, byte-compatible .palmier project format, legacy fallback | [`1-0-domain-model.md`](HISTORY/1-0-domain-model.md) |
+| 2 | 2.0 | Media engine: FFmpeg probe, decode, encode, waveforms, thumbnails, bounded concurrency | [`2-0-media-engine.md`](HISTORY/2-0-media-engine.md) |
