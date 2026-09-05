@@ -74,11 +74,20 @@ impl MediaConcurrencyLimiter {
     where
         F: Future<Output = MediaResult<T>>,
     {
+        if token.is_cancelled() {
+            return Err(MediaError::Cancelled);
+        }
+
         tokio::select! {
+            biased;
             _ = token.cancelled() => Err(MediaError::Cancelled),
             permit = gate.acquire() => {
                 let _permit = permit.map_err(|_| MediaError::Cancelled)?;
+                if token.is_cancelled() {
+                    return Err(MediaError::Cancelled);
+                }
                 tokio::select! {
+                    biased;
                     _ = token.cancelled() => Err(MediaError::Cancelled),
                     result = task => result,
                 }
