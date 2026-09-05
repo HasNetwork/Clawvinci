@@ -55,7 +55,6 @@ fn test_split_linked_clips() {
     let mut a_track = Track::new(ClipType::Audio);
     let mut a_clip = Clip::new("a-asset", 0, 100);
     a_clip.link_group_id = Some(link_id);
-    let a_id = a_clip.id.clone();
     a_track.clips.push(a_clip);
 
     timeline.tracks = vec![v_track, a_track];

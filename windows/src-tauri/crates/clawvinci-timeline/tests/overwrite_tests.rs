@@ -4,21 +4,21 @@
 use clawvinci_model::clip_type::ClipType;
 use clawvinci_model::timeline::{Clip, Timeline, Track};
 use clawvinci_timeline::editor::TimelineEditor;
-use clawvinci_timeline::overwrite::{compute_overwrite, OverwriteAction};
+use clawvinci_timeline::overwrite::{OverwriteAction, OverwriteEngine};
 
 #[test]
 fn test_compute_overwrite_actions() {
     let clip = Clip::new("asset", 100, 100); // [100, 200)
 
     // 1. Fully covers: [90, 210)
-    let actions = compute_overwrite(&[clip.clone()], 90, 210);
+    let actions = OverwriteEngine::compute_overwrite(&[clip.clone()], 90, 210);
     assert_eq!(actions, vec![OverwriteAction::Remove { clip_id: clip.id.clone() }]);
 
     // 2. Overlaps left: [80, 140) -> Trims end of left portion?
     // region is [80, 140). Clip is [100, 200).
     // cs (100) >= regionStart (80), and ce (200) > regionEnd (140).
     // That overlaps the clip's left side, so clip's start is trimmed: TrimStart!
-    let actions2 = compute_overwrite(&[clip.clone()], 80, 140);
+    let actions2 = OverwriteEngine::compute_overwrite(&[clip.clone()], 80, 140);
     assert_eq!(actions2.len(), 1);
     match actions2[0].clone() {
         OverwriteAction::TrimStart { clip_id, new_start_frame, new_duration, .. } => {
@@ -32,7 +32,7 @@ fn test_compute_overwrite_actions() {
     // 3. Overlaps right side of clip: region [160, 220)
     // cs = 100, ce = 200. regionStart = 160, regionEnd = 220.
     // cs < regionStart, ce <= regionEnd -> TrimEnd
-    let actions3 = compute_overwrite(&[clip.clone()], 160, 220);
+    let actions3 = OverwriteEngine::compute_overwrite(&[clip.clone()], 160, 220);
     assert_eq!(actions3.len(), 1);
     match actions3[0].clone() {
         OverwriteAction::TrimEnd { clip_id, new_duration } => {
@@ -43,7 +43,7 @@ fn test_compute_overwrite_actions() {
     }
 
     // 4. Middle punch: region [130, 170) -> Split
-    let actions4 = compute_overwrite(&[clip.clone()], 130, 170);
+    let actions4 = OverwriteEngine::compute_overwrite(&[clip.clone()], 130, 170);
     assert_eq!(actions4.len(), 1);
     match actions4[0].clone() {
         OverwriteAction::Split { clip_id, left_duration, right_start_frame, right_duration, .. } => {
