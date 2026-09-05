@@ -8,5 +8,7 @@ description = "Phase 3: Timeline editing core, ripple/overwrite, shared undo his
 [dependencies]
 clawvinci-model = { path = "../clawvinci-model" }
 serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+uuid.workspace = true
