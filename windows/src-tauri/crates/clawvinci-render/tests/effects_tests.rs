@@ -1,6 +1,8 @@
 // Copyright (C) 2026 Clawvinci Contributors.
 // SPDX-License-Identifier: GPL-3.0-only
 
+#![allow(clippy::chunks_exact_to_as_chunks)]
+
 use clawvinci_model::clip_type::ClipType;
 use clawvinci_model::effect::Effect;
 use clawvinci_model::grade::{GradeCurve, HueCurves};

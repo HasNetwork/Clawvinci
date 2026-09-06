@@ -49,7 +49,7 @@ pub struct TextAnimator;
 impl TextAnimator {
     /// Whole-clip entrance. Non-entrance presets return default identity.
     pub fn clip_entry(anim: &TextAnimation, rel: i64) -> ClipState {
-        let dur = (anim.per_word_frames.max(1)) as i64;
+        let dur = anim.per_word_frames.max(1);
         let t = Self::progress(rel, 0, dur);
         match anim.preset {
             AnimationPreset::PopIn => ClipState {
@@ -75,8 +75,8 @@ impl TextAnimator {
         base: Rgba,
     ) -> WordState {
         let highlight = anim.highlight.unwrap_or(Rgba::new(1.0, 0.85, 0.0, 1.0));
-        let hand = (anim.per_word_frames.max(1)) as i64;
-        let word_start = word.start_frame as i64;
+        let hand = anim.per_word_frames.max(1);
+        let word_start = word.start_frame;
 
         match anim.preset {
             AnimationPreset::WordReveal => {
@@ -137,7 +137,7 @@ impl TextAnimator {
         let Some(hl) = anim.highlight else {
             return base;
         };
-        let on = Self::active_ramp(rel, word, anim.per_word_frames.max(1) as i64);
+        let on = Self::active_ramp(rel, word, anim.per_word_frames.max(1));
         Self::lerp(base, hl, on)
     }
 
@@ -147,7 +147,7 @@ impl TextAnimator {
         next_word: Option<&WordTiming>,
         ramp: usize,
     ) -> f64 {
-        let word_start = word.start_frame as i64;
+        let word_start = word.start_frame;
         if rel < word_start {
             return 0.0;
         }
@@ -160,7 +160,7 @@ impl TextAnimator {
         };
 
         if let Some(next) = next_word {
-            let next_start = next.start_frame as i64;
+            let next_start = next.start_frame;
             if rel >= next_start {
                 if let Some(duration) = Self::ramp_duration(next, ramp) {
                     let elapsed = rel - next_start;
@@ -189,8 +189,8 @@ impl TextAnimator {
     }
 
     fn active_ramp(rel: i64, word: &WordTiming, ramp: i64) -> f64 {
-        let start = word.start_frame as i64;
-        let end = word.end_frame as i64;
+        let start = word.start_frame;
+        let end = word.end_frame;
         if rel < start || rel >= end {
             return 0.0;
         }

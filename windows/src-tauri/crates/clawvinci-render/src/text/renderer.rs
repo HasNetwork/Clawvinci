@@ -5,7 +5,7 @@
 use super::animator::TextAnimator;
 use clawvinci_media::decode::VideoFrame;
 use clawvinci_model::text_animation::TextAnimation;
-use clawvinci_model::text_style::{Rgba, TextAlignment, TextStyle};
+use clawvinci_model::text_style::{TextAlignment, TextStyle};
 use fontdue::{Font, FontSettings};
 use std::collections::HashMap;
 use std::path::Path;

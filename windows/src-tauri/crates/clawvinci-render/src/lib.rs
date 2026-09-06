@@ -3,6 +3,8 @@
 //! Clawvinci Render & Playback Engine (Phase 4-5):
 //! Render-graph builder, shared frame compositor, real-time playback synchronization.
 
+#![allow(clippy::chunks_exact_to_as_chunks)]
+
 pub mod audio;
 pub mod compositor;
 pub mod effects;

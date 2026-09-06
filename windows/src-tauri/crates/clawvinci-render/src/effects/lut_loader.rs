@@ -84,7 +84,7 @@ impl LutLoader {
             }
         }
 
-        if dimension < 2 || dimension > 128 {
+        if !(2..=128).contains(&dimension) {
             return None;
         }
 
