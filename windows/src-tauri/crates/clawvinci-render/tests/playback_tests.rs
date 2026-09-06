@@ -21,7 +21,8 @@ fn create_test_timeline() -> Timeline {
         name: Some("Video 1".into()),
         muted: false,
         hidden: false,
-        locked: false,
+        sync_locked: true,
+        display_height: 48.0,
         clips: Vec::new(),
     };
 
@@ -58,7 +59,8 @@ fn test_frame_plan_single_clip_speed_and_trim() {
         name: Some("Video 1".into()),
         muted: false,
         hidden: false,
-        locked: false,
+        sync_locked: true,
+        display_height: 48.0,
         clips: Vec::new(),
     };
 
@@ -101,7 +103,8 @@ fn test_frame_plan_multi_track_layer_order() {
         name: Some("Bottom Track".into()),
         muted: false,
         hidden: false,
-        locked: false,
+        sync_locked: true,
+        display_height: 48.0,
         clips: vec![Clip::new("bottom-media", 0, 60)],
     };
     track1.clips[0].id = "bottom-clip".into();
@@ -112,7 +115,8 @@ fn test_frame_plan_multi_track_layer_order() {
         name: Some("Top Track".into()),
         muted: false,
         hidden: false,
-        locked: false,
+        sync_locked: true,
+        display_height: 48.0,
         clips: vec![Clip::new("top-media", 0, 60)],
     };
     track2.clips[0].id = "top-clip".into();
@@ -136,7 +140,8 @@ fn test_frame_plan_gap_handling() {
         name: None,
         muted: false,
         hidden: false,
-        locked: false,
+        sync_locked: true,
+        display_height: 48.0,
         clips: vec![
             Clip::new("media-1", 0, 20),
             Clip::new("media-2", 40, 20),
@@ -170,7 +175,8 @@ fn test_frame_plan_nested_sequence() {
         name: None,
         muted: false,
         hidden: false,
-        locked: false,
+        sync_locked: true,
+        display_height: 48.0,
         clips: vec![Clip::new("nested-child-media", 0, 100)],
     };
     nested_track.clips[0].id = "nested-child-clip".into();
@@ -183,7 +189,8 @@ fn test_frame_plan_nested_sequence() {
         name: None,
         muted: false,
         hidden: false,
-        locked: false,
+        sync_locked: true,
+        display_height: 48.0,
         clips: Vec::new(),
     };
 
@@ -249,7 +256,8 @@ fn test_composite_frame_layer_opacity_and_transforms() {
         name: None,
         muted: false,
         hidden: false,
-        locked: false,
+        sync_locked: true,
+        display_height: 48.0,
         clips: Vec::new(),
     };
 
@@ -313,7 +321,8 @@ fn test_composite_frame_blend_modes() {
         name: None,
         muted: false,
         hidden: false,
-        locked: false,
+        sync_locked: true,
+        display_height: 48.0,
         clips: vec![Clip::new("white-media", 0, 10)],
     };
     track1.clips[0].id = "white-clip".into();
@@ -325,7 +334,8 @@ fn test_composite_frame_blend_modes() {
         name: None,
         muted: false,
         hidden: false,
-        locked: false,
+        sync_locked: true,
+        display_height: 48.0,
         clips: vec![Clip::new("green-media", 0, 10)],
     };
     track2.clips[0].id = "green-clip".into();
