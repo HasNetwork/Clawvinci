@@ -25,6 +25,8 @@ reference. Nothing under `Sources/`, `Metal/`, `Plugins/`, `models/`,
 New Windows-port code lives in a new top-level layout defined in
 `PLAN/0-0-foundation.md`.
 
+**Core Metaphor**: Clawvinci is the **"Cursor IDE" but for Video Editing**. Just as Cursor pairs software developers with AI models that read code, write diffs, and invoke linters directly in the workspace, Clawvinci pairs video creators with AI agents that read timeline manifests, cut dead air, re-time clips, grade colors, and animate text through an embedded 53-tool Model Context Protocol (MCP) server, operating on a unified canvas with frame-accurate undo/redo.
+
 ## Decisions locked in (do not re-litigate without flagging why)
 
 | # | Decision | Chosen |

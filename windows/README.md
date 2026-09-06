@@ -1,6 +1,7 @@
 # Clawvinci (Windows Port)
 
-Native Windows port of Palmier Pro — an AI-native video editor with embedded Model Context Protocol (MCP) server support.
+**The "Cursor IDE" for Video Editing** — Native Windows port of Palmier Pro with embedded Model Context Protocol (MCP) server support, enabling human editors and autonomous AI agents to collaborate directly on the same timeline canvas.
+
 
 ## Architecture
 

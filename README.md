@@ -5,8 +5,8 @@
 
 # Clawvinci
 
-**AI-Native Desktop Video Editor for Windows**  
-*Native Windows port of Palmier Pro with embedded Model Context Protocol (MCP) server*
+**The "Cursor IDE" for Video Editing**  
+*AI-Native Desktop NLE for Windows with Embedded Model Context Protocol (MCP) Server*
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white)](windows/)
@@ -24,7 +24,11 @@
 
 ## Overview
 
-**Clawvinci** brings the AI-native workflow of Palmier Pro to Windows. Designed from the ground up with a modular **Rust core** and a high-performance **Tauri v2** desktop shell, Clawvinci enables video editors and AI coding agents (Claude, Cursor, Codex, etc.) to collaborate directly on the same timeline in real time.
+Think of **Clawvinci** as the **"Cursor IDE" for Video Editing**. 
+
+Just as modern AI-first code editors (like Cursor or Windsurf) pair developers with AI agents that can directly read, write, and refactor code files inside the workspace, Clawvinci pairs video creators with AI agents that can directly read, cut, trim, arrange, and grade clips directly on the timeline canvas.
+
+Built with a modular, high-performance **Rust core** and a lightweight **Tauri v2** desktop shell, Clawvinci exposes an embedded **Model Context Protocol (MCP)** server. Connected AI assistants (such as Claude Code, Cursor, Codex, or local models) act as collaborative co-editors—analyzing scenes, removing dead air, re-sequencing multi-camera tracks, applying color grades, and inserting kinetic text overlays, all preserved within a frame-accurate, shared undo/redo history.
 
 ### Core Capabilities
 

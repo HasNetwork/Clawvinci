@@ -22,6 +22,12 @@
   - **Licensing**: GPL-3.0-only (mirroring the original Palmier Pro license).
 - **Single Source of Truth**: The `.agents/` directory is the authoritative repository of decisions, plans, rules, and history.
 
+### Product Mental Model: "The Cursor IDE of Video Editing"
+A foundational mental model for Clawvinci is that it is **"Cursor IDE" but for Video Editing**:
+- **In Software Engineering**: Modern AI-first editors (like Cursor or Windsurf) bridge human developers and AI models by granting agents direct, tool-driven manipulation of the workspace—reading files, analyzing ASTs, generating surgical diffs, and inspecting compiler feedback.
+- **In Video Editing**: Clawvinci bridges human video creators and AI agents by granting models direct, tool-driven manipulation of the NLE timeline—reading media manifests, inspecting audio waveforms, executing frame-accurate ripple/overwrite edits, adjusting color grades, tuning transforms, and generating kinetic text via the Model Context Protocol (MCP).
+- **Symmetric Collaboration**: Human editor and AI agent share the exact same domain state, see the exact same canvas, and operate through a unified, frame-accurate undo/redo history.
+
 ---
 
 ## 2. Inviolable Engineering Rules & Invariants
