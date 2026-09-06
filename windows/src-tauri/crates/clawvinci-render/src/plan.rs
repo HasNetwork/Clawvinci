@@ -108,25 +108,25 @@ impl CompositionBuilder {
     }
 
     /// Builds the `FramePlan` using custom source size and nested timeline resolvers.
-    pub fn build_frame_plan_with_resolvers<FSize, FNest>(
-        timeline: &Timeline,
+    pub fn build_frame_plan_with_resolvers<'a, FSize, FNest>(
+        timeline: &'a Timeline,
         frame: usize,
         resolve_source_size: FSize,
         resolve_nested_timeline: FNest,
     ) -> RenderResult<FramePlan>
     where
         FSize: Fn(&str) -> Option<(u32, u32)>,
-        FNest: Fn(&str) -> Option<&Timeline>,
+        FNest: Fn(&str) -> Option<&'a Timeline>,
     {
         Self::build_frame_plan_dyn(timeline, frame, &resolve_source_size, &resolve_nested_timeline)
     }
 
     /// Internal implementation using trait objects to avoid infinite monomorphization on recursion.
-    fn build_frame_plan_dyn(
-        timeline: &Timeline,
+    fn build_frame_plan_dyn<'a>(
+        timeline: &'a Timeline,
         frame: usize,
         resolve_source_size: &dyn Fn(&str) -> Option<(u32, u32)>,
-        resolve_nested_timeline: &dyn Fn(&str) -> Option<&Timeline>,
+        resolve_nested_timeline: &dyn Fn(&str) -> Option<&'a Timeline>,
     ) -> RenderResult<FramePlan> {
         if timeline.width <= 0 || timeline.height <= 0 || timeline.fps <= 0 {
             return Err(RenderError::InvalidTimeline(format!(
@@ -211,7 +211,7 @@ impl CompositionBuilder {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn build_layer_plan_dyn(
+    fn build_layer_plan_dyn<'a>(
         clip: &Clip,
         track_idx: usize,
         track: &clawvinci_model::timeline::Track,
@@ -220,7 +220,7 @@ impl CompositionBuilder {
         render_w: u32,
         render_h: u32,
         resolve_source_size: &dyn Fn(&str) -> Option<(u32, u32)>,
-        resolve_nested_timeline: &dyn Fn(&str) -> Option<&Timeline>,
+        resolve_nested_timeline: &dyn Fn(&str) -> Option<&'a Timeline>,
     ) -> RenderResult<LayerPlan> {
         let rel_frame = frame - clip.start_frame;
         let speed = if clip.speed == 0.0 { 1.0 } else { clip.speed };
