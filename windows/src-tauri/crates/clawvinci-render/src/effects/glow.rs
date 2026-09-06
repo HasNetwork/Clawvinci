@@ -67,8 +67,8 @@ pub fn apply_glow(pixels: &mut [u8], width: u32, height: u32, params: &ResolvedE
     // Pass 2: blur bright layer
     gaussian_blur(&mut bright_layer, width, height, radius);
 
-    // Pass 3: glowComposite (screen blend)
-    let buf = &mut pixels[..len.min(pixels.len())];
+    let limit = len.min(pixels.len());
+    let buf = &mut pixels[..limit];
     for (chunk, glow_chunk) in buf.chunks_exact_mut(4).zip(bright_layer.chunks_exact(4)) {
         let s_r = chunk[0] as f32 / 255.0;
         let s_g = chunk[1] as f32 / 255.0;

@@ -6,8 +6,8 @@ use super::types::ResolvedEffectParams;
 
 /// Invert: 1.0 - RGB, preserves alpha.
 pub fn apply_invert(pixels: &mut [u8], width: u32, height: u32, _params: &ResolvedEffectParams) {
-    let len = (width * height * 4) as usize;
-    let buf = &mut pixels[..len.min(pixels.len())];
+    let limit = ((width * height * 4) as usize).min(pixels.len());
+    let buf = &mut pixels[..limit];
 
     for chunk in buf.chunks_exact_mut(4) {
         chunk[0] = 255 - chunk[0];

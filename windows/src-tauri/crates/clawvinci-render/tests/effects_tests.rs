@@ -280,7 +280,6 @@ fn test_hue_curves_identity() {
 #[test]
 fn test_text_animator() {
     let anim = TextAnimation {
-        is_active: true,
         preset: AnimationPreset::PopIn,
         per_word_frames: 10,
         highlight: None,

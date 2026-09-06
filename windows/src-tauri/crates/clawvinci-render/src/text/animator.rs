@@ -74,7 +74,7 @@ impl TextAnimator {
         rel: i64,
         base: Rgba,
     ) -> WordState {
-        let highlight = anim.highlight.unwrap_or(TextAnimation::default_highlight());
+        let highlight = anim.highlight.unwrap_or(Rgba::new(1.0, 0.85, 0.0, 1.0));
         let hand = (anim.per_word_frames.max(1)) as i64;
         let word_start = word.start_frame as i64;
 
@@ -207,7 +207,7 @@ impl TextAnimator {
         if span <= 1 {
             return None;
         }
-        Some(maximum.max(1).min(span / 2).max(1))
+        Some(maximum.max(1).min((span / 2) as usize).max(1))
     }
 
     fn smoothstep(t: f64) -> f64 {

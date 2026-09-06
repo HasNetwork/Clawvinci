@@ -11,8 +11,8 @@ pub fn apply_vibrance(pixels: &mut [u8], width: u32, height: u32, params: &Resol
         return;
     }
 
-    let len = (width * height * 4) as usize;
-    let buf = &mut pixels[..len.min(pixels.len())];
+    let limit = ((width * height * 4) as usize).min(pixels.len());
+    let buf = &mut pixels[..limit];
 
     for chunk in buf.chunks_exact_mut(4) {
         let r = chunk[0] as f32 / 255.0;

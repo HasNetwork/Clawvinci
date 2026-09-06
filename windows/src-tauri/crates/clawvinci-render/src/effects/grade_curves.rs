@@ -90,8 +90,8 @@ pub fn apply_grade_curves(
     }
 
     let luts = GradeLuts::build(&curve);
-    let len = (width * height * 4) as usize;
-    let buf = &mut pixels[..len.min(pixels.len())];
+    let limit = ((width * height * 4) as usize).min(pixels.len());
+    let buf = &mut pixels[..limit];
 
     for chunk in buf.chunks_exact_mut(4) {
         let r = chunk[0] as f32 / 255.0;

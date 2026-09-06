@@ -19,7 +19,7 @@ fn smoothstep(edge0: f32, edge1: f32, x: f32) -> f32 {
 /// midpoint sets where falloff starts; feather sets falloff width.
 pub fn apply_vignette(pixels: &mut [u8], width: u32, height: u32, params: &ResolvedEffectParams) {
     let amount = params.value("amount") as f32;
-    if amount == 0.0 || width == 0 || height == 0 {
+    if amount == 0.0 || width == 0 || height == 0 || pixels.len() < (width * height * 4) as usize {
         return;
     }
 

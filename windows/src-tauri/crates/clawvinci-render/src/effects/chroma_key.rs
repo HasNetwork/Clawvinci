@@ -47,8 +47,8 @@ pub fn apply_chroma_key(
     let inner = tolerance * 0.25;
     let outer = inner + softness * 0.3 + 0.02;
 
-    let len = (width * height * 4) as usize;
-    let buf = &mut pixels[..len.min(pixels.len())];
+    let limit = ((width * height * 4) as usize).min(pixels.len());
+    let buf = &mut pixels[..limit];
 
     for chunk in buf.chunks_exact_mut(4) {
         let mut r = chunk[0] as f32 / 255.0;

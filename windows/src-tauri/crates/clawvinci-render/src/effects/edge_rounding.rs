@@ -24,7 +24,7 @@ pub fn apply_edge_rounding(
     if edge_rounding <= 0.0 && edge_softness <= 0.0 {
         return;
     }
-    if width == 0 || height == 0 {
+    if width == 0 || height == 0 || pixels.len() < (width * height * 4) as usize {
         return;
     }
 

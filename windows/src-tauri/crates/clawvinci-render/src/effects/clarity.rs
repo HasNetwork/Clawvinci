@@ -28,8 +28,8 @@ pub fn apply_clarity(pixels: &mut [u8], width: u32, height: u32, params: &Resolv
     let mut blurred = pixels.to_vec();
     gaussian_blur(&mut blurred, width, height, radius);
 
-    let len = (width * height * 4) as usize;
-    let buf = &mut pixels[..len.min(pixels.len())];
+    let limit = ((width * height * 4) as usize).min(pixels.len());
+    let buf = &mut pixels[..limit];
 
     for (chunk, b_chunk) in buf.chunks_exact_mut(4).zip(blurred.chunks_exact(4)) {
         let s_r = chunk[0] as f32 / 255.0;

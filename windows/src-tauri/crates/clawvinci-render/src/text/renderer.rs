@@ -80,7 +80,7 @@ impl TextRenderer {
         let mut clip_opacity = 1.0f32;
         let mut offset_y = 0.0f64;
         if let Some(a) = anim {
-            if a.is_active {
+            if a.preset != clawvinci_model::text_animation::AnimationPreset::None {
                 let entry = TextAnimator::clip_entry(a, frame as i64);
                 clip_opacity = entry.opacity;
                 font_size *= entry.scale as f32;
@@ -93,7 +93,7 @@ impl TextRenderer {
         }
 
         let mut buffer = vec![0u8; (render_width * render_height * 4) as usize];
-        let font_opt = Self::load_font(&style.font_family);
+        let font_opt = Self::load_font(&style.font_name);
 
         let params = TextRenderParams {
             style,
@@ -138,11 +138,22 @@ impl TextRenderer {
             let bg_color = p.style.background.color;
             let bg_alpha = (bg_color.a as f32 * p.clip_opacity).clamp(0.0, 1.0);
 
+            let mut max_line_w = 0.0f32;
+            for line in &lines {
+                let mut lw = 0.0f32;
+                for ch in line.chars() {
+                    lw += font.metrics(ch, p.font_size).advance_width + p.style.tracking as f32;
+                }
+                max_line_w = max_line_w.max(lw);
+            }
+
+            let box_x0 = ((p.render_w as f32 - max_line_w) * 0.5 - pad_x).clamp(0.0, p.render_w as f32) as u32;
+            let box_x1 = ((p.render_w as f32 + max_line_w) * 0.5 + pad_x).clamp(0.0, p.render_w as f32) as u32;
             let box_y0 = (start_y - pad_y).clamp(0.0, p.render_h as f32) as u32;
             let box_y1 = (start_y + total_text_h + pad_y).clamp(0.0, p.render_h as f32) as u32;
 
             for y in box_y0..box_y1 {
-                for x in 0..p.render_w {
+                for x in box_x0..box_x1 {
                     let idx = ((y * p.render_w + x) * 4) as usize;
                     blend_rgba_over(
                         &mut canvas[idx..idx + 4],

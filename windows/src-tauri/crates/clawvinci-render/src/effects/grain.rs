@@ -26,7 +26,7 @@ fn hash13(p3: [f32; 3]) -> f32 {
 /// Film grain: monochromatic, position+frame-seeded noise, strongest in mid-tones.
 pub fn apply_grain(pixels: &mut [u8], width: u32, height: u32, params: &ResolvedEffectParams) {
     let amount = params.value("amount") as f32;
-    if amount <= 0.0 || width == 0 || height == 0 {
+    if amount <= 0.0 || width == 0 || height == 0 || pixels.len() < (width * height * 4) as usize {
         return;
     }
 
