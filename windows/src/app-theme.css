@@ -1,0 +1,146 @@
+/* Copyright (C) 2026 Clawvinci Contributors.
+   SPDX-License-Identifier: GPL-3.0-only
+   Design Tokens ported from Sources/PalmierPro/UI/AppTheme.swift & TimelineClipColors.swift
+   Theme: Premium Dark Design System */
+
+:root {
+  /* Color Palette — Monochromatic Dark */
+  --bg-base: #0e0f12;
+  --bg-surface: #16171a;
+  --bg-raised: #1f2025;
+  --bg-prominent: #292a31;
+  --bg-active: rgba(255, 255, 255, 0.08);
+  --bg-hover: rgba(255, 255, 255, 0.05);
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-primary: rgba(255, 255, 255, 0.12);
+  --border-divider: rgba(255, 255, 255, 0.22);
+  --border-focus: rgba(255, 255, 255, 0.4);
+  --border-panel: #000000;
+
+  /* Typography Colors */
+  --text-primary: #f0f0f2;
+  --text-secondary: #9b9ba3;
+  --text-tertiary: #71717a;
+  --text-muted: #52525b;
+
+  /* Accents & Special States */
+  --accent-primary: #ececec;
+  --accent-playhead: #ff524d;
+  --accent-timecode: #f29933;
+  --accent-link: #4094ff;
+  --status-error: #e54f4f;
+  --status-success: #4fb85f;
+  --status-warning: #f59e0b;
+
+  /* Track / Clip Type Palette (Desaturated NLE Colors) */
+  --clip-video: #1d5878;
+  --clip-audio: #2e7765;
+  --clip-image: #715486;
+  --clip-text: #546e7a;
+  --clip-animation: #a07822;
+  --clip-sequence: #7a7260;
+  --clip-selected-border: #ffffff;
+
+  /* Spacing Scale */
+  --space-xxs: 2px;
+  --space-xs: 4px;
+  --space-sm: 6px;
+  --space-sm-md: 8px;
+  --space-md: 10px;
+  --space-md-lg: 12px;
+  --space-lg: 14px;
+  --space-lg-xl: 16px;
+  --space-xl: 20px;
+  --space-xl-xxl: 24px;
+  --space-xxl: 28px;
+
+  /* Font Sizes */
+  --font-micro: 8px;
+  --font-xxs: 9px;
+  --font-xs: 10px;
+  --font-sm: 11px;
+  --font-sm-md: 12px;
+  --font-md: 13px;
+  --font-md-lg: 14px;
+  --font-lg: 15px;
+  --font-xl: 18px;
+  --font-title1: 22px;
+  --font-title2: 28px;
+  --font-display: 36px;
+
+  /* Border Radii */
+  --radius-xs: 3px;
+  --radius-xs-sm: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-md-lg: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 9999px;
+
+  /* Border Widths */
+  --border-width-hairline: 0.5px;
+  --border-width-thin: 1px;
+  --border-width-medium: 1.5px;
+  --border-width-thick: 2px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+
+  /* Transitions */
+  --anim-hover: 150ms ease;
+  --anim-smooth: 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* Layout Heights */
+  --header-height: 42px;
+  --footer-height: 26px;
+  --track-header-width: 140px;
+  --track-height: 38px;
+  --ruler-height: 26px;
+}
+
+/* Base resets & typography */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  font-size: var(--font-sm-md);
+  line-height: 1.4;
+}
+
+/* Tabular numbers for timecodes and metrics */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-family: "SF Mono", Menlo, Consolas, Monaco, monospace;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-prominent);
+  border-radius: var(--radius-xs);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-divider);
+}

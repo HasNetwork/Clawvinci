@@ -1,14 +1,42 @@
 // Copyright (C) 2026 Clawvinci Contributors.
 // SPDX-License-Identifier: GPL-3.0-only
 
-use clawvinci_model::timeline::Timeline;
+use clawvinci_model::clip_type::ClipType;
+use clawvinci_model::effect::{Effect, EffectParam};
+use clawvinci_model::text_style::TextStyle;
+use clawvinci_model::timeline::{Clip, Timeline, Track};
 use clawvinci_render::engine::{PlaybackEngine, PlaybackStateSnapshot, SeekMode};
 use clawvinci_render::plan::FramePlan;
-use serde::Serialize;
+use clawvinci_timeline::editor::TimelineEditor;
+use clawvinci_timeline::error::TimelineError;
+use clawvinci_timeline::ripple::TrimEdge;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-type EngineState = Arc<Mutex<PlaybackEngine>>;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MediaItemDto {
+    pub id: String,
+    pub name: String,
+    pub path: String,
+    pub media_type: String,
+    pub duration_seconds: f64,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub fps: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryStatusDto {
+    pub can_undo: bool,
+    pub can_redo: bool,
+    pub undo_name: Option<String>,
+    pub redo_name: Option<String>,
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,6 +46,14 @@ pub struct FrameRenderResult {
     pub height: u32,
     pub rgba_base64: String,
 }
+
+pub struct AppState {
+    pub editor: TimelineEditor,
+    pub engine: PlaybackEngine,
+    pub media_items: Vec<MediaItemDto>,
+}
+
+type SharedState = Arc<Mutex<AppState>>;
 
 fn bytes_to_base64(bytes: &[u8]) -> String {
     const CHARSET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -42,75 +78,77 @@ fn bytes_to_base64(bytes: &[u8]) -> String {
     out
 }
 
+// MARK: - Playback Commands
+
 #[tauri::command]
-async fn playback_get_state(state: tauri::State<'_, EngineState>) -> Result<PlaybackStateSnapshot, String> {
-    let engine = state.lock().await;
-    Ok(engine.snapshot())
+async fn playback_get_state(state: tauri::State<'_, SharedState>) -> Result<PlaybackStateSnapshot, String> {
+    let app = state.lock().await;
+    Ok(app.engine.snapshot())
 }
 
 #[tauri::command]
-async fn playback_play(state: tauri::State<'_, EngineState>) -> Result<PlaybackStateSnapshot, String> {
-    let mut engine = state.lock().await;
-    engine.play();
-    Ok(engine.snapshot())
+async fn playback_play(state: tauri::State<'_, SharedState>) -> Result<PlaybackStateSnapshot, String> {
+    let mut app = state.lock().await;
+    app.engine.play();
+    Ok(app.engine.snapshot())
 }
 
 #[tauri::command]
-async fn playback_pause(state: tauri::State<'_, EngineState>) -> Result<PlaybackStateSnapshot, String> {
-    let mut engine = state.lock().await;
-    engine.pause();
-    Ok(engine.snapshot())
+async fn playback_pause(state: tauri::State<'_, SharedState>) -> Result<PlaybackStateSnapshot, String> {
+    let mut app = state.lock().await;
+    app.engine.pause();
+    Ok(app.engine.snapshot())
 }
 
 #[tauri::command]
-async fn playback_toggle(state: tauri::State<'_, EngineState>) -> Result<PlaybackStateSnapshot, String> {
-    let mut engine = state.lock().await;
-    engine.toggle_play();
-    Ok(engine.snapshot())
+async fn playback_toggle(state: tauri::State<'_, SharedState>) -> Result<PlaybackStateSnapshot, String> {
+    let mut app = state.lock().await;
+    app.engine.toggle_play();
+    Ok(app.engine.snapshot())
 }
 
 #[tauri::command]
 async fn playback_seek(
     frame: usize,
     mode: Option<SeekMode>,
-    state: tauri::State<'_, EngineState>,
+    state: tauri::State<'_, SharedState>,
 ) -> Result<PlaybackStateSnapshot, String> {
-    let mut engine = state.lock().await;
+    let mut app = state.lock().await;
     let seek_mode = mode.unwrap_or(SeekMode::Exact);
-    engine
+    app.engine
         .seek(frame, seek_mode)
         .map_err(|e| e.to_string())?;
-    Ok(engine.snapshot())
+    Ok(app.engine.snapshot())
 }
 
 #[tauri::command]
 async fn playback_step(
     delta: i64,
-    state: tauri::State<'_, EngineState>,
+    state: tauri::State<'_, SharedState>,
 ) -> Result<PlaybackStateSnapshot, String> {
-    let mut engine = state.lock().await;
-    engine.step(delta).map_err(|e| e.to_string())?;
-    Ok(engine.snapshot())
+    let mut app = state.lock().await;
+    app.engine.step(delta).map_err(|e| e.to_string())?;
+    Ok(app.engine.snapshot())
 }
 
 #[tauri::command]
 async fn playback_get_frame_plan(
     frame: usize,
-    state: tauri::State<'_, EngineState>,
+    state: tauri::State<'_, SharedState>,
 ) -> Result<FramePlan, String> {
-    let engine = state.lock().await;
-    clawvinci_render::plan::CompositionBuilder::build_frame_plan(engine.timeline(), frame)
+    let app = state.lock().await;
+    clawvinci_render::plan::CompositionBuilder::build_frame_plan(app.engine.timeline(), frame)
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn playback_render_frame(
     frame: usize,
-    state: tauri::State<'_, EngineState>,
+    state: tauri::State<'_, SharedState>,
 ) -> Result<FrameRenderResult, String> {
-    let mut engine = state.lock().await;
-    engine.seek(frame, SeekMode::Exact).map_err(|e| e.to_string())?;
-    let rendered = engine.render_current_frame().map_err(|e| e.to_string())?;
+    let mut app = state.lock().await;
+    app.engine.seek(frame, SeekMode::Exact).map_err(|e| e.to_string())?;
+    let rendered = app.engine.render_current_frame().map_err(|e| e.to_string())?;
     let b64 = bytes_to_base64(&rendered.data);
     Ok(FrameRenderResult {
         frame_index: rendered.frame_index,
@@ -120,14 +158,371 @@ async fn playback_render_frame(
     })
 }
 
+// MARK: - Timeline Editing Commands
+
+#[tauri::command]
+async fn timeline_get(state: tauri::State<'_, SharedState>) -> Result<Timeline, String> {
+    let app = state.lock().await;
+    Ok(app.editor.timeline().clone())
+}
+
+#[tauri::command]
+async fn timeline_split_clip(
+    clip_id: String,
+    at_frame: i64,
+    state: tauri::State<'_, SharedState>,
+) -> Result<Timeline, String> {
+    let mut app = state.lock().await;
+    app.editor
+        .split_clip(&clip_id, at_frame)
+        .map_err(|e| e.to_string())?;
+    app.engine.set_timeline(app.editor.timeline().clone());
+    Ok(app.editor.timeline().clone())
+}
+
+#[tauri::command]
+async fn timeline_trim_clip(
+    clip_id: String,
+    edge: String,
+    delta: i64,
+    state: tauri::State<'_, SharedState>,
+) -> Result<Timeline, String> {
+    let mut app = state.lock().await;
+    let trim_edge = if edge.eq_ignore_ascii_case("left") || edge.eq_ignore_ascii_case("head") {
+        TrimEdge::Left
+    } else {
+        TrimEdge::Right
+    };
+    app.editor
+        .trim_clip(&clip_id, trim_edge, delta)
+        .map_err(|e| e.to_string())?;
+    app.engine.set_timeline(app.editor.timeline().clone());
+    Ok(app.editor.timeline().clone())
+}
+
+#[tauri::command]
+async fn timeline_move_clips(
+    moves: Vec<(String, usize, i64)>,
+    state: tauri::State<'_, SharedState>,
+) -> Result<Timeline, String> {
+    let mut app = state.lock().await;
+    app.editor
+        .move_clips(&moves)
+        .map_err(|e| e.to_string())?;
+    app.engine.set_timeline(app.editor.timeline().clone());
+    Ok(app.editor.timeline().clone())
+}
+
+#[tauri::command]
+async fn timeline_remove_clips(
+    clip_ids: Vec<String>,
+    state: tauri::State<'_, SharedState>,
+) -> Result<Timeline, String> {
+    let mut app = state.lock().await;
+    let set: HashSet<String> = clip_ids.into_iter().collect();
+    app.editor
+        .remove_clips(&set)
+        .map_err(|e| e.to_string())?;
+    app.engine.set_timeline(app.editor.timeline().clone());
+    Ok(app.editor.timeline().clone())
+}
+
+#[tauri::command]
+async fn timeline_ripple_delete(
+    clip_ids: Vec<String>,
+    state: tauri::State<'_, SharedState>,
+) -> Result<Timeline, String> {
+    let mut app = state.lock().await;
+    let set: HashSet<String> = clip_ids.into_iter().collect();
+    app.editor
+        .ripple_delete(&set)
+        .map_err(|e| e.to_string())?;
+    app.engine.set_timeline(app.editor.timeline().clone());
+    Ok(app.editor.timeline().clone())
+}
+
+#[tauri::command]
+async fn timeline_insert_track(
+    track_type: String,
+    state: tauri::State<'_, SharedState>,
+) -> Result<Timeline, String> {
+    let mut app = state.lock().await;
+    let kind = match track_type.to_lowercase().as_str() {
+        "audio" => ClipType::Audio,
+        "image" => ClipType::Image,
+        "text" => ClipType::Text,
+        _ => ClipType::Video,
+    };
+    let index = app.editor.timeline().tracks.len();
+    app.editor
+        .insert_track(index, kind)
+        .map_err(|e| e.to_string())?;
+    app.engine.set_timeline(app.editor.timeline().clone());
+    Ok(app.editor.timeline().clone())
+}
+
+#[tauri::command]
+async fn timeline_undo(state: tauri::State<'_, SharedState>) -> Result<Timeline, String> {
+    let mut app = state.lock().await;
+    app.editor.undo().map_err(|e| e.to_string())?;
+    app.engine.set_timeline(app.editor.timeline().clone());
+    Ok(app.editor.timeline().clone())
+}
+
+#[tauri::command]
+async fn timeline_redo(state: tauri::State<'_, SharedState>) -> Result<Timeline, String> {
+    let mut app = state.lock().await;
+    app.editor.redo().map_err(|e| e.to_string())?;
+    app.engine.set_timeline(app.editor.timeline().clone());
+    Ok(app.editor.timeline().clone())
+}
+
+#[tauri::command]
+async fn timeline_history_status(
+    state: tauri::State<'_, SharedState>,
+) -> Result<HistoryStatusDto, String> {
+    let app = state.lock().await;
+    Ok(HistoryStatusDto {
+        can_undo: app.editor.can_undo(),
+        can_redo: app.editor.can_redo(),
+        undo_name: app.editor.undo_action_name().map(String::from),
+        redo_name: app.editor.redo_action_name().map(String::from),
+    })
+}
+
+#[tauri::command]
+async fn timeline_update_clip_transform(
+    clip_id: String,
+    center_x: f64,
+    center_y: f64,
+    width: f64,
+    height: f64,
+    rotation: f64,
+    opacity: f64,
+    state: tauri::State<'_, SharedState>,
+) -> Result<Timeline, String> {
+    let mut app = state.lock().await;
+    app.editor
+        .perform("Update Transform", |tl| {
+            for track in &mut tl.tracks {
+                for clip in &mut track.clips {
+                    if clip.id == clip_id {
+                        clip.transform.center_x = center_x;
+                        clip.transform.center_y = center_y;
+                        clip.transform.width = width;
+                        clip.transform.height = height;
+                        clip.transform.rotation = rotation;
+                        clip.opacity = opacity.clamp(0.0, 1.0);
+                        return Ok(());
+                    }
+                }
+            }
+            Err(TimelineError::ClipNotFound(clip_id.clone()))
+        })
+        .map_err(|e| e.to_string())?;
+    app.engine.set_timeline(app.editor.timeline().clone());
+    Ok(app.editor.timeline().clone())
+}
+
+#[tauri::command]
+async fn timeline_update_clip_effect(
+    clip_id: String,
+    effect_type: String,
+    param_key: String,
+    value: f64,
+    state: tauri::State<'_, SharedState>,
+) -> Result<Timeline, String> {
+    let mut app = state.lock().await;
+    app.editor
+        .perform("Update Effect", |tl| {
+            for track in &mut tl.tracks {
+                for clip in &mut track.clips {
+                    if clip.id == clip_id {
+                        let effects = clip.effects.get_or_insert_with(Vec::new);
+                        if let Some(eff) = effects.iter_mut().find(|e| e.effect_type == effect_type) {
+                            eff.params.insert(param_key, EffectParam::from_value(value));
+                        } else {
+                            let mut eff = Effect::new(effect_type);
+                            eff.params.insert(param_key, EffectParam::from_value(value));
+                            effects.push(eff);
+                        }
+                        return Ok(());
+                    }
+                }
+            }
+            Err(TimelineError::ClipNotFound(clip_id.clone()))
+        })
+        .map_err(|e| e.to_string())?;
+    app.engine.set_timeline(app.editor.timeline().clone());
+    Ok(app.editor.timeline().clone())
+}
+
+#[tauri::command]
+async fn timeline_update_clip_text(
+    clip_id: String,
+    text: String,
+    font_size: f64,
+    state: tauri::State<'_, SharedState>,
+) -> Result<Timeline, String> {
+    let mut app = state.lock().await;
+    app.editor
+        .perform("Update Text", |tl| {
+            for track in &mut tl.tracks {
+                for clip in &mut track.clips {
+                    if clip.id == clip_id {
+                        clip.text_content = Some(text);
+                        let style = clip.text_style.get_or_insert_with(TextStyle::default);
+                        style.font_size = font_size;
+                        return Ok(());
+                    }
+                }
+            }
+            Err(TimelineError::ClipNotFound(clip_id.clone()))
+        })
+        .map_err(|e| e.to_string())?;
+    app.engine.set_timeline(app.editor.timeline().clone());
+    Ok(app.editor.timeline().clone())
+}
+
+// MARK: - Media Pool Commands
+
+#[tauri::command]
+async fn media_list(state: tauri::State<'_, SharedState>) -> Result<Vec<MediaItemDto>, String> {
+    let app = state.lock().await;
+    Ok(app.media_items.clone())
+}
+
+#[tauri::command]
+async fn media_import(path: String, state: tauri::State<'_, SharedState>) -> Result<MediaItemDto, String> {
+    let mut app = state.lock().await;
+    let file_path = Path::new(&path);
+    let probe_result = clawvinci_media::probe_media(file_path);
+    let item = if let Ok(probe) = probe_result {
+        let name = file_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("Untitled Media")
+            .to_string();
+        let is_video = !probe.video_streams.is_empty();
+        let (width, height, fps) = if let Some(v) = probe.primary_video() {
+            (Some(v.width), Some(v.height), Some(v.fps))
+        } else {
+            (None, None, None)
+        };
+        MediaItemDto {
+            id: format!("media-{}", app.media_items.len() + 1),
+            name,
+            path,
+            media_type: if is_video { "video".to_string() } else { "audio".to_string() },
+            duration_seconds: probe.duration_seconds,
+            width,
+            height,
+            fps,
+        }
+    } else {
+        let name = file_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("Imported File")
+            .to_string();
+        MediaItemDto {
+            id: format!("media-{}", app.media_items.len() + 1),
+            name,
+            path,
+            media_type: "video".to_string(),
+            duration_seconds: 5.0,
+            width: Some(1920),
+            height: Some(1080),
+            fps: Some(30.0),
+        }
+    };
+    app.media_items.push(item.clone());
+    Ok(item)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let default_timeline = Timeline::new(30, 1920, 1080);
-    let engine: EngineState = Arc::new(Mutex::new(PlaybackEngine::new(default_timeline)));
+    let mut timeline = Timeline::new(30, 1920, 1080);
+
+    // Default Track 0: Video Track
+    let mut video_track = Track::new(ClipType::Video);
+    video_track.name = Some("Video 1".to_string());
+    let mut clip1 = Clip::new("sample-media-1", 0, 90);
+    clip1.id = "clip-v1".to_string();
+    let mut clip2 = Clip::new("sample-media-2", 90, 150);
+    clip2.id = "clip-v2".to_string();
+    video_track.clips.push(clip1);
+    video_track.clips.push(clip2);
+    timeline.tracks.push(video_track);
+
+    // Default Track 1: Audio Track
+    let mut audio_track = Track::new(ClipType::Audio);
+    audio_track.name = Some("Audio 1".to_string());
+    let mut clip_a1 = Clip::new("sample-audio-1", 0, 240);
+    clip_a1.id = "clip-a1".to_string();
+    clip_a1.media_type = ClipType::Audio;
+    clip_a1.source_clip_type = ClipType::Audio;
+    audio_track.clips.push(clip_a1);
+    timeline.tracks.push(audio_track);
+
+    // Default Track 2: Title Text Track
+    let mut text_track = Track::new(ClipType::Text);
+    text_track.name = Some("Titles".to_string());
+    let mut clip_t1 = Clip::new("sample-text-1", 15, 120);
+    clip_t1.id = "clip-t1".to_string();
+    clip_t1.media_type = ClipType::Text;
+    clip_t1.source_clip_type = ClipType::Text;
+    clip_t1.text_content = Some("Clawvinci Studio".to_string());
+    let mut style = TextStyle::default();
+    style.font_size = 72.0;
+    clip_t1.text_style = Some(style);
+    text_track.clips.push(clip_t1);
+    timeline.tracks.push(text_track);
+
+    let media_items = vec![
+        MediaItemDto {
+            id: "sample-media-1".to_string(),
+            name: "Mountain_Landscape_4K.mp4".to_string(),
+            path: "sample-media-1".to_string(),
+            media_type: "video".to_string(),
+            duration_seconds: 3.0,
+            width: Some(1920),
+            height: Some(1080),
+            fps: Some(30.0),
+        },
+        MediaItemDto {
+            id: "sample-media-2".to_string(),
+            name: "City_Streets_Night.mp4".to_string(),
+            path: "sample-media-2".to_string(),
+            media_type: "video".to_string(),
+            duration_seconds: 5.0,
+            width: Some(1920),
+            height: Some(1080),
+            fps: Some(30.0),
+        },
+        MediaItemDto {
+            id: "sample-audio-1".to_string(),
+            name: "Atmospheric_Synth_Theme.wav".to_string(),
+            path: "sample-audio-1".to_string(),
+            media_type: "audio".to_string(),
+            duration_seconds: 8.0,
+            width: None,
+            height: None,
+            fps: None,
+        },
+    ];
+
+    let editor = TimelineEditor::new(timeline.clone());
+    let engine = PlaybackEngine::new(timeline);
+    let state: SharedState = Arc::new(Mutex::new(AppState {
+        editor,
+        engine,
+        media_items,
+    }));
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .manage(engine)
+        .manage(state)
         .invoke_handler(tauri::generate_handler![
             playback_get_state,
             playback_play,
@@ -137,6 +532,21 @@ pub fn run() {
             playback_step,
             playback_get_frame_plan,
             playback_render_frame,
+            timeline_get,
+            timeline_split_clip,
+            timeline_trim_clip,
+            timeline_move_clips,
+            timeline_remove_clips,
+            timeline_ripple_delete,
+            timeline_insert_track,
+            timeline_undo,
+            timeline_redo,
+            timeline_history_status,
+            timeline_update_clip_transform,
+            timeline_update_clip_effect,
+            timeline_update_clip_text,
+            media_list,
+            media_import,
         ])
         .setup(|_app| Ok(()))
         .run(tauri::generate_context!())
