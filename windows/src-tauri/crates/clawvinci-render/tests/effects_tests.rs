@@ -3,6 +3,7 @@
 
 #![allow(clippy::chunks_exact_to_as_chunks)]
 
+use clawvinci_media::decode::VideoFrame;
 use clawvinci_model::clip_type::ClipType;
 use clawvinci_model::effect::Effect;
 use clawvinci_model::grade::{GradeCurve, HueCurves};
@@ -319,8 +320,9 @@ fn test_text_rendering() {
 
 #[test]
 fn test_full_pipeline_with_effects_and_rounding() {
-    let mut timeline = Timeline::new("test_pipeline", 320, 180, 30);
-    let mut clip = Clip::new("clip_1", "solid_1", ClipType::SolidColor, 0, 30);
+    let mut timeline = Timeline::new(30, 320, 180);
+    let mut clip = Clip::new("media_1", 0, 30);
+    clip.id = "clip_1".to_string();
     clip.edge_rounding = 0.5;
 
     // Add an exposure effect
@@ -331,7 +333,7 @@ fn test_full_pipeline_with_effects_and_rounding() {
     );
     clip.effects = Some(vec![effect]);
 
-    let mut track = Track::new("t1", "Track 1", ClipType::Video);
+    let mut track = Track::new(ClipType::Video);
     track.clips.push(clip);
     timeline.tracks.push(track);
 
@@ -343,7 +345,16 @@ fn test_full_pipeline_with_effects_and_rounding() {
     assert_eq!(plan.layers[0].effects[0].effect_type, "color.exposure");
     assert_eq!(plan.layers[0].edge_rounding, 0.5);
 
-    let rendered = composite_frame(&plan, &HashMap::new())
+    let mut sources = HashMap::new();
+    let src_frame = VideoFrame {
+        width: 320,
+        height: 180,
+        frame_index: 0,
+        data: vec![128u8; 320 * 180 * 4],
+    };
+    sources.insert("clip_1".to_string(), src_frame);
+
+    let rendered = composite_frame(&plan, &sources)
         .expect("should composite frame");
 
     assert_eq!(rendered.width, 320);
