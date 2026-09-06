@@ -298,6 +298,7 @@ async fn timeline_history_status(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 async fn timeline_update_clip_transform(
     clip_id: String,
@@ -381,8 +382,14 @@ async fn timeline_update_clip_text(
                 for clip in &mut track.clips {
                     if clip.id == clip_id {
                         clip.text_content = Some(text);
-                        let style = clip.text_style.get_or_insert_with(TextStyle::default);
-                        style.font_size = font_size;
+                        if let Some(style) = &mut clip.text_style {
+                            style.font_size = font_size;
+                        } else {
+                            clip.text_style = Some(TextStyle {
+                                font_size,
+                                ..Default::default()
+                            });
+                        }
                         return Ok(());
                     }
                 }
@@ -489,8 +496,10 @@ pub fn run() {
     clip_t1.media_type = ClipType::Text;
     clip_t1.source_clip_type = ClipType::Text;
     clip_t1.text_content = Some("Clawvinci Studio".to_string());
-    let mut style = TextStyle::default();
-    style.font_size = 72.0;
+    let style = TextStyle {
+        font_size: 72.0,
+        ..Default::default()
+    };
     clip_t1.text_style = Some(style);
     text_track.clips.push(clip_t1);
     timeline.tracks.push(text_track);
