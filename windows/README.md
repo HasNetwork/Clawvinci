@@ -44,6 +44,14 @@ If developing locally on Windows:
    npm run tauri dev
    ```
 
+## Project Documentation
+
+- Root README: [`../README.md`](../README.md)
+- Developer Handover & Status: [`../.agents/Handover.md`](../.agents/Handover.md)
+- Phase Implementation Plans: [`../.agents/PLAN.md`](../.agents/PLAN.md)
+- Implementation History: [`../.agents/HISTORY.md`](../.agents/HISTORY.md)
+
 ## License
 
 GPLv3. See `LICENSE` for terms.
+

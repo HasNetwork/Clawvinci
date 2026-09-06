@@ -1,82 +1,63 @@
 > [!IMPORTANT]
-> Palmier Pro releases through v0.7.6, and source code through [`last-gpl-source`](https://github.com/palmier-io/palmier-pro/tree/last-gpl-source), were published under GPLv3. Later binary releases are proprietary, and their corresponding source is not published. This repository preserves the historical source and hosts current binary releases and update metadata.
+> This repository contains **Clawvinci**, the native Windows port of Palmier Pro (the AI-native video editor with embedded MCP server). The original macOS Swift source code (releases through v0.7.6 published under GPLv3) is preserved at the repository root as a read-only behavioral and format reference. Clawvinci is developed natively for Windows under the same GPL-3.0 license.
 
 <div align="center">
 
-# Palmier Pro
+# Clawvinci
 
-**The video editor built for AI.**
+**AI-Native Desktop Video Editor for Windows**  
+*Native Windows port of Palmier Pro with embedded Model Context Protocol (MCP) server*
 
-<a href="https://github.com/palmier-io/palmier-pro/releases/latest/download/PalmierPro.dmg">
-  <img src="./assets/macos-badge.png" alt="Download Palmier Pro for macOS" width="180" />
-</a>
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white)](windows/)
+[![Rust](https://img.shields.io/badge/Rust-1.80%2B-orange?logo=rust&logoColor=white)](windows/src-tauri/)
+[![Tauri v2](https://img.shields.io/badge/Tauri-v2-24C8D8?logo=tauri&logoColor=white)](https://v2.tauri.app/)
+[![CI](https://github.com/palmier-io/palmier-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/palmier-io/palmier-pro/actions/workflows/ci.yml)
 
-<sub><i>Requires macOS 26 (Tahoe) on Apple Silicon</i></sub>
+<br />
 
-<a href="https://x.com/Palmier_io"><img src="https://img.shields.io/badge/Follow-%40Palmier__io-000000?style=flat&logo=x&logoColor=white" alt="Follow on X" /></a>
-<a href="https://discord.com/invite/SMVW6pKYmg"><img src="https://img.shields.io/badge/Join-Discord-5865F2?style=flat&logo=discord&logoColor=white" alt="Join Discord" /></a>
-<a href="https://www.ycombinator.com/companies/palmier"><img src="https://img.shields.io/badge/Y%20Combinator-S24-orange" alt="Y Combinator S24" /></a>
-
-<p>
-  <strong>English</strong> ·
-  <a href="docs/readme/README.es.md">Español</a> ·
-  <a href="docs/readme/README.zh-CN.md">简体中文</a> ·
-  <a href="docs/readme/README.zh-TW.md">繁體中文</a> ·
-  <a href="docs/readme/README.ja.md">日本語</a> ·
-  <a href="docs/readme/README.ko.md">한국어</a> ·
-  <a href="docs/readme/README.vi.md">Tiếng Việt</a> ·
-  <a href="docs/readme/README.hi.md">हिन्दी</a> ·
-  <a href="docs/readme/README.bn.md">বাংলা</a> ·
-  <a href="docs/readme/README.ar.md">العربية</a> ·
-  <a href="docs/readme/README.it.md">Italiano</a> ·
-  <a href="docs/readme/README.pt-BR.md">Português (Brasil)</a> ·
-  <a href="docs/readme/README.fr.md">Français</a> ·
-  <a href="docs/readme/README.ru.md">Русский</a> ·
-  <a href="docs/readme/README.tr.md">Türkçe</a>
-</p>
+<img src="./assets/palmier-ui.png" alt="Clawvinci UI" width="900" />
 
 </div>
 
-<img src="./assets/palmier-ui.png" alt="Palmier Pro UI" width="900" />
+---
+
+## Overview
+
+**Clawvinci** brings the AI-native workflow of Palmier Pro to Windows. Designed from the ground up with a modular **Rust core** and a high-performance **Tauri v2** desktop shell, Clawvinci enables video editors and AI coding agents (Claude, Cursor, Codex, etc.) to collaborate directly on the same timeline in real time.
+
+### Core Capabilities
+
+- **Frame-Accurate Multi-Track Timeline**: Canvas-rendered timeline with sub-frame precision, interactive clip trimming, splitting, ripple/overwrite edits, and shared undo/redo history.
+- **Embedded MCP Server**: Exposes a local HTTP/SSE Model Context Protocol endpoint (`http://127.0.0.1:19789/mcp`) with 53 specialized video editing tools that allow autonomous AI agents to inspect, cut, rearrange, and grade clips.
+- **GPU Effects & Color Pipeline**: 12 shader algorithms (tone controls, lift/gamma/gain color wheels, vignette, grain, blur, glow, curves), 3D `.cube` LUT support with tetrahedral interpolation, and styled text overlays.
+- **High-Performance Media Engine**: Built-in FFmpeg probe, decode, and encode pipeline with audio waveform generation and frame thumbnails.
+- **Universal Project Compatibility**: Native support for the byte-compatible `.palmier` project bundle format, alongside export interchange to DaVinci Resolve (FCPXML) and Premiere Pro (XMEML).
+- **Windows 10 & 11 Native**: Built for Windows 10 (22H2+) and Windows 11 on x86_64, utilizing DirectX 12 rendering via `wgpu` with automatic Vulkan fallback.
 
 ---
 
-Palmier Pro is a macOS video editor with built-in AI generation and MCP support, allowing agents to create and edit directly on the timeline.
+## Connecting AI Agents (MCP)
 
-### Swift-native video editor
+When Clawvinci is running, it hosts an embedded MCP server at `http://127.0.0.1:19789/mcp`. You can connect your favorite AI assistant to edit your timeline:
 
-We built Palmier Pro from scratch with Swift. The north star is Premiere Pro, with our take on integrating AI into the workflow.
-
-### Built-in Generative AI
-
-Generate videos and images with SOTA models like Seedance, Kling, Nano Banana Pro inside the timeline editor.
-
-### Integrates with your agents
-
-Connects your Claude/Codex/Cursor via MCP, or use the in-app agent to work on the same project together.
-
-## MCP server
-
-When the app is open, it exposes an MCP server at `http://127.0.0.1:19789/mcp` via HTTP. To connect:
-
-**Claude Code**
+### Claude Code
 ```bash
-claude mcp add --transport http palmier-pro http://127.0.0.1:19789/mcp
+claude mcp add --transport http clawvinci http://127.0.0.1:19789/mcp
 ```
 
-**Codex**
+### Codex
 ```bash
-codex mcp add palmier-pro --url http://127.0.0.1:19789/mcp
+codex mcp add clawvinci --url http://127.0.0.1:19789/mcp
 ```
 
-**Cursor**
+### Cursor
+Add the following to your Cursor MCP settings (`~/.cursor/mcp.json` or `%USERPROFILE%\.cursor\mcp.json`):
 
-The easiest way is go inside the app `Help` -> `MCP Instructions` -> `Install in Cursor`, or install manually by adding this to `~/.cursor/mcp.json`:
-
-```
+```json
 {
   "mcpServers": {
-    "palmier-pro": {
+    "clawvinci": {
       "type": "http",
       "url": "http://127.0.0.1:19789/mcp"
     }
@@ -84,35 +65,89 @@ The easiest way is go inside the app `Help` -> `MCP Instructions` -> `Install in
 }
 ```
 
-**Claude Desktop**
+### Claude Desktop
+Configure your `claude_desktop_config.json`:
 
-We bundle a [mcpb](https://github.com/modelcontextprotocol/mcpb) with the app that allows a one click install Desktop Extension on Claude Desktop. Go to `Help` -> `MCP Instructions` -> `Install in Claude Desktop`
+```json
+{
+  "mcpServers": {
+    "clawvinci": {
+      "type": "http",
+      "url": "http://127.0.0.1:19789/mcp"
+    }
+  }
+}
+```
 
-## FAQ
+---
 
-**Which versions of Palmier Pro are open source?**
+## Architecture
 
-Releases through v0.7.6 and source through `last-gpl-source` remain available under GPLv3. Later releases are proprietary.
+Clawvinci is organized as a clean Rust workspace inside [`windows/src-tauri/crates/`](windows/src-tauri/crates/):
 
-**What platforms does it support?**
+| Crate | Purpose | Status |
+|---|---|---|
+| **`clawvinci-model`** | Domain models (`Timeline`, `Track`, `Clip`, `Timecode`), serialization, and `.palmier` format. | ✅ Complete |
+| **`clawvinci-media`** | FFmpeg-based video/audio probe, frame decoding, thumbnail cache, waveform generation. | ✅ Complete |
+| **`clawvinci-timeline`** | NLE editing primitives, ripple/overwrite engine, track/clip operations, command undo history. | ✅ Complete |
+| **`clawvinci-render`** | `FramePlan` builder, compositor, 12 GPU effects, 3D LUT parser, text rasterization & animators. | ✅ Complete |
+| **`clawvinci` (Tauri App)** | Application shell, IPC bridge (16+ commands), window management, Premium Dark UI. | ✅ Complete |
+| **`clawvinci-export`** | Render-to-file batch export, FCPXML 1.10–1.14, Premiere XMEML 4, and export queue. | 🚀 In Progress (Phase 7.0) |
+| **`clawvinci-mcp`** | Embedded HTTP MCP server exposing 53 editing tools to AI agents. | 📋 Planned (Phase 8.0) |
+| **`clawvinci-audio`** | Beat detection (ONNX), silence removal, audio metering, and synchronization. | 📋 Planned (Phase 9.0) |
+| **`clawvinci-search`** | Semantic visual search (SigLIP2 ONNX) and transcription search. | 📋 Planned (Phase 10.0) |
+| **`clawvinci-gen`** | Generative AI integration (video and image generation providers). | 📋 Planned (Phase 11.0) |
 
-macOS 26 (Tahoe) or later on Apple Silicon (M series) only.
+---
 
-## Contributing
+## Getting Started (Windows Development)
 
-This repository no longer accepts code contributions. The published source remains available for use, modification, and redistribution under GPLv3.
+### Prerequisites
+1. **Windows 10 (22H2+) or Windows 11**.
+2. **Visual Studio C++ Build Tools** with Windows 10/11 SDK.
+3. **Rust** (`rustup default stable-x86_64-pc-windows-msvc`).
+4. **Node.js** (v18+) and **npm**.
 
-## Community &amp; Support
+### Build & Run Locally
 
-- **Discord:** Join the community on **[Discord](https://discord.com/invite/SMVW6pKYmg)**.
-- **Twitter / X:** Follow **[@Palmier_io](https://x.com/Palmier_io)** for updates and announcements.
-- **Instagram:** Follow [@palmier.io](https://www.instagram.com/palmier.io) 
-- **Feedback &amp; Support:** Email founders@palmier.io.
+1. **Clone the repository**:
+   ```powershell
+   git clone https://github.com/palmier-io/palmier-pro.git
+   cd palmier-pro
+   ```
+
+2. **Install frontend dependencies**:
+   ```powershell
+   npm --prefix windows install
+   ```
+
+3. **Run tests across all Rust crates**:
+   ```powershell
+   cargo test --workspace
+   ```
+
+4. **Verify lints**:
+   ```powershell
+   cargo clippy --workspace -- -D warnings
+   ```
+
+5. **Launch in development mode with live reload**:
+   ```powershell
+   npm --prefix windows run tauri dev
+   ```
+
+---
+
+## Project Documentation & History
+
+- **Developer Handover & Implementation Guide**: [`.agents/Handover.md`](.agents/Handover.md)
+- **Phase Implementation Plans**: [`.agents/PLAN.md`](.agents/PLAN.md)
+- **Implementation History**: [`.agents/HISTORY.md`](.agents/HISTORY.md)
+- **Engineering Rules & Architecture Invariants**: [`.agents/RULES.md`](.agents/RULES.md)
+
+---
 
 ## License
 
-Copyright (C) 2026 Palmier, Inc.
-
-The source code published in this repository remains available under [GPLv3](LICENSE).
-
-Palmier Pro binary releases after v0.7.6 are proprietary and subject to the [binary license](BINARY_LICENSE.md).
+- The Clawvinci Windows codebase and original Palmier Pro GPL source code are published under the **GNU General Public License v3.0 (GPL-3.0-only)**. See [LICENSE](LICENSE) for full details.
+- Palmier Pro binary releases for macOS after v0.7.6 are proprietary to Palmier, Inc.
