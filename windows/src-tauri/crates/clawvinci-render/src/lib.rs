@@ -5,12 +5,18 @@
 
 pub mod audio;
 pub mod compositor;
+pub mod effects;
 pub mod engine;
 pub mod error;
 pub mod plan;
+pub mod text;
 
 pub use audio::{AudioClock, ScrubAudioEngine};
 pub use compositor::composite_frame;
+pub use effects::{EffectDescriptor, EffectParamSpec, EffectRegistry, ResolvedEffectParams};
 pub use engine::{PlaybackEngine, PlaybackStateSnapshot, PlaybackStatus, SeekMode};
 pub use error::{RenderError, RenderResult};
-pub use plan::{AudioClipPlan, AudioPlan, CompositionBuilder, FramePlan, LayerPlan, LayerSource};
+pub use plan::{
+    AudioClipPlan, AudioPlan, CompositionBuilder, EffectPlan, FramePlan, LayerPlan, LayerSource,
+};
+pub use text::{ClipState, TextAnimator, TextRenderer, WordState};

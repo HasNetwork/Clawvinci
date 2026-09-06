@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Derived from Sources/PalmierPro/Preview/CompositionBuilder.swift (GPLv3).
 
+use crate::effects::{EffectRegistry, ResolvedEffectParams};
 use crate::error::{RenderError, RenderResult};
 use clawvinci_model::blend_mode::BlendMode;
 use clawvinci_model::clip_type::ClipType;
+use clawvinci_model::text_animation::TextAnimation;
 use clawvinci_model::text_style::TextStyle;
 use clawvinci_model::timeline::{Clip, Crop, Timeline, Transform};
 use serde::{Deserialize, Serialize};
@@ -25,6 +27,7 @@ pub enum LayerSource {
     Text {
         content: String,
         style: Option<TextStyle>,
+        animation: Option<TextAnimation>,
     },
     SolidColor {
         r: u8,
@@ -36,6 +39,15 @@ pub enum LayerSource {
         timeline_id: String,
         sub_plan: Box<FramePlan>,
     },
+}
+
+/// Execution plan for an individual effect on a layer.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EffectPlan {
+    pub effect_type: String,
+    pub params: ResolvedEffectParams,
+    pub enabled: bool,
 }
 
 /// A single visual layer to be composited onto the frame canvas.
@@ -52,6 +64,9 @@ pub struct LayerPlan {
     pub blend_mode: BlendMode,
     pub natural_width: u32,
     pub natural_height: u32,
+    pub effects: Vec<EffectPlan>,
+    pub edge_rounding: f64,
+    pub edge_softness: f64,
 }
 
 /// An active audio source contributing to the frame's audio mix.
@@ -238,10 +253,40 @@ impl CompositionBuilder {
 
         let natural_size = resolve_source_size(&clip.media_ref).unwrap_or((render_w, render_h));
 
+        let mut effects_plan = Vec::new();
+        if let Some(effects) = &clip.effects {
+            let mut sorted = effects.clone();
+            sorted.sort_by_key(|e| {
+                EffectRegistry::canonical_order()
+                    .iter()
+                    .position(|&id| id == e.effect_type)
+                    .unwrap_or(usize::MAX)
+            });
+            for effect in sorted {
+                if !effect.enabled {
+                    continue;
+                }
+                if let Some(desc) = EffectRegistry::descriptor(&effect.effect_type) {
+                    let params = EffectRegistry::resolve_params(
+                        desc,
+                        &effect,
+                        rel_frame.max(0) as usize,
+                        1.0,
+                    );
+                    effects_plan.push(EffectPlan {
+                        effect_type: effect.effect_type.clone(),
+                        params,
+                        enabled: true,
+                    });
+                }
+            }
+        }
+
         let source = match clip.media_type {
             ClipType::Text => LayerSource::Text {
                 content: clip.text_content.clone().unwrap_or_default(),
                 style: clip.text_style.clone(),
+                animation: clip.text_animation.clone(),
             },
             ClipType::Image => LayerSource::Image {
                 media_ref: clip.media_ref.clone(),
@@ -284,6 +329,9 @@ impl CompositionBuilder {
             blend_mode,
             natural_width: natural_size.0,
             natural_height: natural_size.1,
+            effects: effects_plan,
+            edge_rounding: clip.edge_rounding,
+            edge_softness: clip.edge_softness,
         })
     }
 

@@ -1,11 +1,11 @@
-// Copyright (C) 2026 Clawvinci Contributors.
-// SPDX-License-Identifier: GPL-3.0-only
-// Derived from Sources/PalmierPro/Compositing/CustomVideoCompositor.swift and FrameRenderer.swift (GPLv3).
-
+use crate::effects::{apply_edge_rounding, EffectRegistry};
 use crate::error::{RenderError, RenderResult};
 use crate::plan::{FramePlan, LayerPlan, LayerSource};
+use crate::text::TextRenderer;
 use clawvinci_media::decode::VideoFrame;
 use clawvinci_model::blend_mode::BlendMode;
+use clawvinci_model::text_style::TextStyle;
+use clawvinci_model::timeline::Crop;
 use std::collections::HashMap;
 
 /// Authoritative compositing function shared between preview and export.
@@ -33,7 +33,7 @@ pub fn composite_frame(
         if layer.opacity <= 0.0 {
             continue;
         }
-        composite_layer(&mut canvas, width, height, layer, sources)?;
+        composite_layer(&mut canvas, width, height, layer, sources, plan.frame_index)?;
     }
 
     Ok(VideoFrame {
@@ -50,65 +50,133 @@ fn composite_layer(
     canvas_h: u32,
     layer: &LayerPlan,
     sources: &HashMap<String, VideoFrame>,
+    frame_index: usize,
 ) -> RenderResult<()> {
-    // Determine source image pixels
-    let source_frame_opt = match &layer.source {
+    // 1. Obtain and crop raw source pixels
+    let mut working_frame = match &layer.source {
         LayerSource::Video { media_ref, .. } | LayerSource::Image { media_ref } => {
-            sources.get(&layer.clip_id).or_else(|| sources.get(media_ref))
+            let src_opt = sources.get(&layer.clip_id).or_else(|| sources.get(media_ref));
+            if let Some(src) = src_opt {
+                crop_source(src, &layer.crop)
+            } else {
+                return Ok(());
+            }
         }
         LayerSource::Nested { sub_plan, .. } => {
             let nested_rendered = composite_frame(sub_plan, sources)?;
-            return composite_rendered_frame(canvas, canvas_w, canvas_h, layer, &nested_rendered);
+            crop_source(&nested_rendered, &layer.crop)
         }
-        LayerSource::SolidColor { r, g, b, a } => {
-            let solid = VideoFrame {
-                width: 1,
-                height: 1,
-                frame_index: 0,
-                data: vec![*r, *g, *b, *a],
-            };
-            return composite_rendered_frame(canvas, canvas_w, canvas_h, layer, &solid);
-        }
-        LayerSource::Text { .. } => {
-            // Placeholder text raster: semi-transparent accent block
-            let text_buf = VideoFrame {
-                width: 2,
-                height: 2,
-                frame_index: 0,
-                data: [240, 240, 245, 255].repeat(4),
-            };
-            return composite_rendered_frame(canvas, canvas_w, canvas_h, layer, &text_buf);
+        LayerSource::SolidColor { r, g, b, a } => VideoFrame {
+            width: 1,
+            height: 1,
+            frame_index,
+            data: vec![*r, *g, *b, *a],
+        },
+        LayerSource::Text {
+            content,
+            style,
+            animation,
+        } => {
+            let default_style = TextStyle::default();
+            let s = style.as_ref().unwrap_or(&default_style);
+            if let Some(text_frame) = TextRenderer::render_text(
+                content,
+                s,
+                animation.as_ref(),
+                frame_index,
+                canvas_w,
+                canvas_h,
+            ) {
+                text_frame
+            } else {
+                return Ok(());
+            }
         }
     };
 
-    if let Some(src) = source_frame_opt {
-        composite_rendered_frame(canvas, canvas_w, canvas_h, layer, src)?;
+    if working_frame.width == 0 || working_frame.height == 0 || working_frame.data.is_empty() {
+        return Ok(());
     }
+
+    // 2. Effects apply in source-pixel space: after crop, before placement
+    apply_layer_effects(&mut working_frame, layer);
+
+    // 3. Edge rounding applies after effects
+    apply_layer_edge_rounding(&mut working_frame, layer);
+
+    // 4. Transform and composite onto canvas
+    composite_placed_frame(canvas, canvas_w, canvas_h, layer, &working_frame);
 
     Ok(())
 }
 
-fn composite_rendered_frame(
+fn crop_source(src: &VideoFrame, crop: &Crop) -> VideoFrame {
+    if crop.is_identity() || src.width == 0 || src.height == 0 {
+        return src.clone();
+    }
+
+    let src_w = src.width as f64;
+    let src_h = src.height as f64;
+    let x0 = (src_w * crop.left).clamp(0.0, src_w) as u32;
+    let y0 = (src_h * crop.top).clamp(0.0, src_h) as u32;
+    let w = (src_w * crop.visible_width_fraction()).clamp(1.0, (src.width - x0).max(1) as f64) as u32;
+    let h = (src_h * crop.visible_height_fraction()).clamp(1.0, (src.height - y0).max(1) as f64) as u32;
+
+    let mut data = vec![0u8; (w * h * 4) as usize];
+    for dy in 0..h {
+        let sy = y0 + dy;
+        let s_row = ((sy * src.width + x0) * 4) as usize;
+        let d_row = ((dy * w) * 4) as usize;
+        let row_len = (w * 4) as usize;
+        if s_row + row_len <= src.data.len() && d_row + row_len <= data.len() {
+            data[d_row..d_row + row_len].copy_from_slice(&src.data[s_row..s_row + row_len]);
+        }
+    }
+
+    VideoFrame {
+        width: w,
+        height: h,
+        frame_index: src.frame_index,
+        data,
+    }
+}
+
+fn apply_layer_effects(frame: &mut VideoFrame, layer: &LayerPlan) {
+    for effect_plan in &layer.effects {
+        if !effect_plan.enabled {
+            continue;
+        }
+        if let Some(desc) = EffectRegistry::descriptor(&effect_plan.effect_type) {
+            EffectRegistry::render_effect(
+                desc,
+                &mut frame.data,
+                frame.width,
+                frame.height,
+                &effect_plan.params,
+            );
+        }
+    }
+}
+
+fn apply_layer_edge_rounding(frame: &mut VideoFrame, layer: &LayerPlan) {
+    if layer.edge_rounding > 0.0 || layer.edge_softness > 0.0 {
+        apply_edge_rounding(
+            &mut frame.data,
+            frame.width,
+            frame.height,
+            layer.edge_rounding as f32,
+            layer.edge_softness as f32,
+        );
+    }
+}
+
+fn composite_placed_frame(
     canvas: &mut [u8],
     canvas_w: u32,
     canvas_h: u32,
     layer: &LayerPlan,
     src: &VideoFrame,
-) -> RenderResult<()> {
-    if src.width == 0 || src.height == 0 || src.data.is_empty() {
-        return Ok(());
-    }
-
-    // Source crop calculations
-    let crop = &layer.crop;
-    let src_crop_x = (src.width as f64 * crop.left).clamp(0.0, src.width as f64) as u32;
-    let src_crop_y = (src.height as f64 * crop.top).clamp(0.0, src.height as f64) as u32;
-    let src_crop_w = (src.width as f64 * crop.visible_width_fraction())
-        .clamp(1.0, (src.width - src_crop_x).max(1) as f64) as u32;
-    let src_crop_h = (src.height as f64 * crop.visible_height_fraction())
-        .clamp(1.0, (src.height - src_crop_y).max(1) as f64) as u32;
-
-    // Target geometry on canvas
+) {
     let transform = &layer.transform;
     let target_w = (canvas_w as f64 * transform.width.abs()).round().max(1.0) as i32;
     let target_h = (canvas_h as f64 * transform.height.abs()).round().max(1.0) as i32;
@@ -119,14 +187,13 @@ fn composite_rendered_frame(
     let target_x0 = target_cx - target_w / 2;
     let target_y0 = target_cy - target_h / 2;
 
-    // Intersect target rect with canvas boundaries
     let clip_x0 = target_x0.max(0);
     let clip_y0 = target_y0.max(0);
     let clip_x1 = (target_x0 + target_w).min(canvas_w as i32);
     let clip_y1 = (target_y0 + target_h).min(canvas_h as i32);
 
     if clip_x1 <= clip_x0 || clip_y1 <= clip_y0 {
-        return Ok(());
+        return;
     }
 
     let opacity = layer.opacity.clamp(0.0, 1.0);
@@ -139,7 +206,7 @@ fn composite_rendered_frame(
         } else {
             ty as f64 / target_h as f64
         };
-        let sy = (src_crop_y as f64 + norm_y * src_crop_h as f64).clamp(0.0, (src.height - 1) as f64) as u32;
+        let sy = (norm_y * (src.height as f64 - 1.0)).clamp(0.0, (src.height - 1) as f64) as u32;
 
         for cx in clip_x0..clip_x1 {
             let tx = cx - target_x0;
@@ -148,7 +215,7 @@ fn composite_rendered_frame(
             } else {
                 tx as f64 / target_w as f64
             };
-            let sx = (src_crop_x as f64 + norm_x * src_crop_w as f64).clamp(0.0, (src.width - 1) as f64) as u32;
+            let sx = (norm_x * (src.width as f64 - 1.0)).clamp(0.0, (src.width - 1) as f64) as u32;
 
             let src_idx = ((sy * src.width + sx) * 4) as usize;
             let dst_idx = ((cy as u32 * canvas_w + cx as u32) * 4) as usize;
@@ -162,8 +229,6 @@ fn composite_rendered_frame(
             }
         }
     }
-
-    Ok(())
 }
 
 #[inline(always)]
