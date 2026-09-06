@@ -104,12 +104,7 @@ impl CompositionBuilder {
         timeline: &Timeline,
         frame: usize,
     ) -> RenderResult<FramePlan> {
-        Self::build_frame_plan_with_resolvers(
-            timeline,
-            frame,
-            |_| None,
-            |_| None,
-        )
+        Self::build_frame_plan_dyn(timeline, frame, &|_| None, &|_| None)
     }
 
     /// Builds the `FramePlan` using custom source size and nested timeline resolvers.
@@ -123,6 +118,16 @@ impl CompositionBuilder {
         FSize: Fn(&str) -> Option<(u32, u32)>,
         FNest: Fn(&str) -> Option<&Timeline>,
     {
+        Self::build_frame_plan_dyn(timeline, frame, &resolve_source_size, &resolve_nested_timeline)
+    }
+
+    /// Internal implementation using trait objects to avoid infinite monomorphization on recursion.
+    fn build_frame_plan_dyn(
+        timeline: &Timeline,
+        frame: usize,
+        resolve_source_size: &dyn Fn(&str) -> Option<(u32, u32)>,
+        resolve_nested_timeline: &dyn Fn(&str) -> Option<&Timeline>,
+    ) -> RenderResult<FramePlan> {
         if timeline.width <= 0 || timeline.height <= 0 || timeline.fps <= 0 {
             return Err(RenderError::InvalidTimeline(format!(
                 "Invalid dimensions or fps: {}x{} @ {}fps",
@@ -138,7 +143,6 @@ impl CompositionBuilder {
         let mut layers = Vec::new();
         let mut audio_clips = Vec::new();
 
-        // Process tracks in order. Video tracks ordered 0..N are composited bottom -> top.
         for (track_idx, track) in timeline.tracks.iter().enumerate() {
             if track.track_type == ClipType::Audio {
                 if track.muted {
@@ -156,7 +160,7 @@ impl CompositionBuilder {
                 }
                 for clip in &track.clips {
                     if clip.start_frame <= frame_i64 && frame_i64 < clip.end_frame() {
-                        let layer = Self::build_layer_plan(
+                        let layer = Self::build_layer_plan_dyn(
                             clip,
                             track_idx,
                             track,
@@ -164,8 +168,8 @@ impl CompositionBuilder {
                             timeline.fps,
                             render_w,
                             render_h,
-                            &resolve_source_size,
-                            &resolve_nested_timeline,
+                            resolve_source_size,
+                            resolve_nested_timeline,
                         )?;
                         layers.push(layer);
                     }
@@ -207,7 +211,7 @@ impl CompositionBuilder {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn build_layer_plan<FSize, FNest>(
+    fn build_layer_plan_dyn(
         clip: &Clip,
         track_idx: usize,
         track: &clawvinci_model::timeline::Track,
@@ -215,13 +219,9 @@ impl CompositionBuilder {
         fps: i32,
         render_w: u32,
         render_h: u32,
-        resolve_source_size: &FSize,
-        resolve_nested_timeline: &FNest,
-    ) -> RenderResult<LayerPlan>
-    where
-        FSize: Fn(&str) -> Option<(u32, u32)>,
-        FNest: Fn(&str) -> Option<&Timeline>,
-    {
+        resolve_source_size: &dyn Fn(&str) -> Option<(u32, u32)>,
+        resolve_nested_timeline: &dyn Fn(&str) -> Option<&Timeline>,
+    ) -> RenderResult<LayerPlan> {
         let rel_frame = frame - clip.start_frame;
         let speed = if clip.speed == 0.0 { 1.0 } else { clip.speed };
         let source_in = clip.trim_start_frame;
@@ -248,7 +248,7 @@ impl CompositionBuilder {
             },
             ClipType::Sequence => {
                 if let Some(nested) = resolve_nested_timeline(&clip.media_ref) {
-                    let sub_plan = Self::build_frame_plan_with_resolvers(
+                    let sub_plan = Self::build_frame_plan_dyn(
                         nested,
                         source_frame,
                         resolve_source_size,
@@ -314,3 +314,4 @@ impl CompositionBuilder {
         }
     }
 }
+
