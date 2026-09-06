@@ -176,8 +176,9 @@ async fn timeline_split_clip(
     app.editor
         .split_clip(&clip_id, at_frame)
         .map_err(|e| e.to_string())?;
-    app.engine.set_timeline(app.editor.timeline().clone());
-    Ok(app.editor.timeline().clone())
+    let timeline = app.editor.timeline().clone();
+    app.engine.set_timeline(timeline.clone());
+    Ok(timeline)
 }
 
 #[tauri::command]
@@ -196,8 +197,9 @@ async fn timeline_trim_clip(
     app.editor
         .trim_clip(&clip_id, trim_edge, delta)
         .map_err(|e| e.to_string())?;
-    app.engine.set_timeline(app.editor.timeline().clone());
-    Ok(app.editor.timeline().clone())
+    let timeline = app.editor.timeline().clone();
+    app.engine.set_timeline(timeline.clone());
+    Ok(timeline)
 }
 
 #[tauri::command]
@@ -209,8 +211,9 @@ async fn timeline_move_clips(
     app.editor
         .move_clips(&moves)
         .map_err(|e| e.to_string())?;
-    app.engine.set_timeline(app.editor.timeline().clone());
-    Ok(app.editor.timeline().clone())
+    let timeline = app.editor.timeline().clone();
+    app.engine.set_timeline(timeline.clone());
+    Ok(timeline)
 }
 
 #[tauri::command]
@@ -223,8 +226,9 @@ async fn timeline_remove_clips(
     app.editor
         .remove_clips(&set)
         .map_err(|e| e.to_string())?;
-    app.engine.set_timeline(app.editor.timeline().clone());
-    Ok(app.editor.timeline().clone())
+    let timeline = app.editor.timeline().clone();
+    app.engine.set_timeline(timeline.clone());
+    Ok(timeline)
 }
 
 #[tauri::command]
@@ -237,8 +241,9 @@ async fn timeline_ripple_delete(
     app.editor
         .ripple_delete(&set)
         .map_err(|e| e.to_string())?;
-    app.engine.set_timeline(app.editor.timeline().clone());
-    Ok(app.editor.timeline().clone())
+    let timeline = app.editor.timeline().clone();
+    app.engine.set_timeline(timeline.clone());
+    Ok(timeline)
 }
 
 #[tauri::command]
@@ -257,24 +262,27 @@ async fn timeline_insert_track(
     app.editor
         .insert_track(index, kind)
         .map_err(|e| e.to_string())?;
-    app.engine.set_timeline(app.editor.timeline().clone());
-    Ok(app.editor.timeline().clone())
+    let timeline = app.editor.timeline().clone();
+    app.engine.set_timeline(timeline.clone());
+    Ok(timeline)
 }
 
 #[tauri::command]
 async fn timeline_undo(state: tauri::State<'_, SharedState>) -> Result<Timeline, String> {
     let mut app = state.lock().await;
     app.editor.undo().map_err(|e| e.to_string())?;
-    app.engine.set_timeline(app.editor.timeline().clone());
-    Ok(app.editor.timeline().clone())
+    let timeline = app.editor.timeline().clone();
+    app.engine.set_timeline(timeline.clone());
+    Ok(timeline)
 }
 
 #[tauri::command]
 async fn timeline_redo(state: tauri::State<'_, SharedState>) -> Result<Timeline, String> {
     let mut app = state.lock().await;
     app.editor.redo().map_err(|e| e.to_string())?;
-    app.engine.set_timeline(app.editor.timeline().clone());
-    Ok(app.editor.timeline().clone())
+    let timeline = app.editor.timeline().clone();
+    app.engine.set_timeline(timeline.clone());
+    Ok(timeline)
 }
 
 #[tauri::command]
@@ -320,8 +328,9 @@ async fn timeline_update_clip_transform(
             Err(TimelineError::ClipNotFound(clip_id.clone()))
         })
         .map_err(|e| e.to_string())?;
-    app.engine.set_timeline(app.editor.timeline().clone());
-    Ok(app.editor.timeline().clone())
+    let timeline = app.editor.timeline().clone();
+    app.engine.set_timeline(timeline.clone());
+    Ok(timeline)
 }
 
 #[tauri::command]
@@ -353,8 +362,9 @@ async fn timeline_update_clip_effect(
             Err(TimelineError::ClipNotFound(clip_id.clone()))
         })
         .map_err(|e| e.to_string())?;
-    app.engine.set_timeline(app.editor.timeline().clone());
-    Ok(app.editor.timeline().clone())
+    let timeline = app.editor.timeline().clone();
+    app.engine.set_timeline(timeline.clone());
+    Ok(timeline)
 }
 
 #[tauri::command]
@@ -380,8 +390,9 @@ async fn timeline_update_clip_text(
             Err(TimelineError::ClipNotFound(clip_id.clone()))
         })
         .map_err(|e| e.to_string())?;
-    app.engine.set_timeline(app.editor.timeline().clone());
-    Ok(app.editor.timeline().clone())
+    let timeline = app.editor.timeline().clone();
+    app.engine.set_timeline(timeline.clone());
+    Ok(timeline)
 }
 
 // MARK: - Media Pool Commands
@@ -394,10 +405,15 @@ async fn media_list(state: tauri::State<'_, SharedState>) -> Result<Vec<MediaIte
 
 #[tauri::command]
 async fn media_import(path: String, state: tauri::State<'_, SharedState>) -> Result<MediaItemDto, String> {
-    let mut app = state.lock().await;
     let file_path = Path::new(&path);
-    let probe_result = clawvinci_media::probe_media(file_path);
-    let item = if let Ok(probe) = probe_result {
+    let probe_opt = if let Ok(ctx) = clawvinci_media::FfmpegContext::discover().await {
+        clawvinci_media::probe_media(&ctx, file_path).await.ok()
+    } else {
+        None
+    };
+
+    let mut app = state.lock().await;
+    let item = if let Some(probe) = probe_opt {
         let name = file_path
             .file_name()
             .and_then(|n| n.to_str())
