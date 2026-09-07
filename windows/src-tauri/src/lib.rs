@@ -22,8 +22,7 @@ use clawvinci_export::queue::{
 };
 use clawvinci_export::service::ExportService;
 use clawvinci_export::xml::XMLExporter;
-use clawvinci_model::manifest::MediaManifest;
-use clawvinci_model::project::ProjectFile;
+use clawvinci_model::{MediaManifest, ProjectFile};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -717,7 +716,7 @@ async fn export_enqueue_project_bundle(
     let dest_path = PathBuf::from(&payload.destination_path);
     let app = state.lock().await;
     let timeline = app.editor.timeline().clone();
-    let project_file = ProjectFile::from_timeline(timeline);
+    let project_file = ProjectFile::new(vec![timeline]);
     let manifest = MediaManifest::default();
     drop(app);
 
