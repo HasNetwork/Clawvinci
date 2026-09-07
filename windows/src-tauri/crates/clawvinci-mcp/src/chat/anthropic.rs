@@ -57,7 +57,7 @@ impl AnthropicClient {
         api_key: Option<&str>,
         messages: &[ChatMessage],
     ) -> Result<AnthropicResponse, String> {
-        let key = match api_key.or_else(|| option_env!("ANTHROPIC_API_KEY")) {
+        let key = match api_key.or(option_env!("ANTHROPIC_API_KEY")) {
             Some(k) if !k.trim().is_empty() => k.trim(),
             _ => {
                 // Offline fallback when no key is configured

@@ -143,7 +143,7 @@ pub fn import_media(args: &Value, state: &mut McpState) -> ToolResult {
             .to_string();
         (p.to_string(), fname)
     } else if let Some(u) = source.get("url").and_then(|v| v.as_str()) {
-        let fname = u.split('/').last().unwrap_or("downloaded_media").to_string();
+        let fname = u.split('/').next_back().unwrap_or("downloaded_media").to_string();
         (u.to_string(), fname)
     } else if source.contains_key("bytes") {
         ("inline_bytes".to_string(), "inline_asset".to_string())

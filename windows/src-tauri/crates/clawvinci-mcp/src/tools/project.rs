@@ -77,10 +77,11 @@ pub fn create_timeline(args: &Value, state: &mut McpState) -> ToolResult {
         cloned.name = name.clone();
         cloned
     } else {
-        let mut empty = Timeline::default();
-        empty.id = Uuid::new_v4().to_string();
-        empty.name = name.clone();
-        empty
+        Timeline {
+            id: Uuid::new_v4().to_string(),
+            name: name.clone(),
+            ..Default::default()
+        }
     };
 
     let new_id = new_timeline.id.clone();
