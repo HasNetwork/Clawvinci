@@ -111,19 +111,19 @@ async fn handle_oauth_discovery() -> Json<Value> {
     }))
 }
 
-/// Spawns the MCP server on a background Tokio task.
+/// Spawns the MCP server on a background task or dedicated thread.
 pub fn start_mcp_server(
     port: u16,
     mcp_state: SharedMcpState,
     cancel_token: CancellationToken,
-) -> tokio::task::JoinHandle<()> {
+) {
     let server_state = ServerState {
         mcp_state,
         executor: Arc::new(ToolExecutor::new()),
     };
     let app = create_mcp_router(server_state);
 
-    tokio::spawn(async move {
+    let run_server = async move {
         let addr = SocketAddr::from(([127, 0, 0, 1], port));
         let listener = match tokio::net::TcpListener::bind(addr).await {
             Ok(l) => {
@@ -145,5 +145,26 @@ pub fn start_mcp_server(
         {
             error!("MCP server error: {e}");
         }
-    })
+    };
+
+    if let Ok(handle) = tokio::runtime::Handle::try_current() {
+        handle.spawn(run_server);
+    } else {
+        std::thread::Builder::new()
+            .name("mcp-server".to_string())
+            .spawn(move || {
+                match tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                {
+                    Ok(rt) => {
+                        rt.block_on(run_server);
+                    }
+                    Err(e) => {
+                        error!("Failed to initialize Tokio runtime for MCP server: {e}");
+                    }
+                }
+            })
+            .expect("Failed to spawn MCP server background thread");
+    }
 }
