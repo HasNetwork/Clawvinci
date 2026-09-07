@@ -12,11 +12,11 @@
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white)](windows/)
 [![Rust](https://img.shields.io/badge/Rust-1.80%2B-orange?logo=rust&logoColor=white)](windows/src-tauri/)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-24C8D8?logo=tauri&logoColor=white)](https://v2.tauri.app/)
-[![CI](https://github.com/palmier-io/palmier-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/palmier-io/palmier-pro/actions/workflows/ci.yml)
+[![CI](https://github.com/HasNetwork/Clawvinci/actions/workflows/ci.yml/badge.svg)](https://github.com/HasNetwork/Clawvinci/actions/workflows/ci.yml)
 
 <br />
 
-<img src="./assets/palmier-ui.png" alt="Clawvinci UI" width="900" />
+<!--<img src="./assets/palmier-ui.png" alt="Clawvinci UI" width="900" />-->
 
 </div>
 
