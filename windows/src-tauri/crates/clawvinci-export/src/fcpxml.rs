@@ -262,7 +262,6 @@ fn build_spine_elements(
                 text: None,
                 children: Vec::new(),
             });
-            current_frame = clip.start_frame;
         }
 
         let clip_node = build_fcpxml_clip_node(clip, primary_track, 0, asset_id_map, title_effect_id, fps, target);

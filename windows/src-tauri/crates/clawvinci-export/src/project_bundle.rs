@@ -85,8 +85,8 @@ impl PalmierProjectExporter {
             }
 
             let source_path_opt = match &entry.source {
-                MediaSource::External { path } => {
-                    let p = PathBuf::from(path);
+                MediaSource::External { absolute_path } => {
+                    let p = PathBuf::from(absolute_path);
                     if p.exists() {
                         Some(p)
                     } else {

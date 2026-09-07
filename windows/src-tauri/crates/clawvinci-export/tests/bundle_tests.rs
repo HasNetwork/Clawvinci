@@ -30,7 +30,7 @@ async fn test_palmier_project_exporter_bundle_roundtrip() {
         "sample1.mp4",
         ClipType::Video,
         MediaSource::External {
-            path: dummy_media_1.to_string_lossy().to_string(),
+            absolute_path: dummy_media_1.to_string_lossy().to_string(),
         },
         10.0,
     ));
@@ -39,7 +39,7 @@ async fn test_palmier_project_exporter_bundle_roundtrip() {
         "sample2.wav",
         ClipType::Audio,
         MediaSource::External {
-            path: dummy_media_2.to_string_lossy().to_string(),
+            absolute_path: dummy_media_2.to_string_lossy().to_string(),
         },
         5.0,
     ));
