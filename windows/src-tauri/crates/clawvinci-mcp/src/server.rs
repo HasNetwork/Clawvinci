@@ -16,6 +16,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use futures_util::stream::{self, Stream};
+use futures_util::StreamExt;
 use serde_json::{json, Value};
 use std::convert::Infallible;
 use std::net::SocketAddr;
