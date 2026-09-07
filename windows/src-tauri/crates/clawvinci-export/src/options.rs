@@ -41,21 +41,16 @@ impl ExportFormat {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum ExportResolution {
     R720p,
+    #[default]
     R1080p,
     R1440p,
     R4k,
     MatchTimeline,
     Custom { width: u32, height: u32 },
-}
-
-impl Default for ExportResolution {
-    fn default() -> Self {
-        Self::R1080p
-    }
 }
 
 impl ExportResolution {
