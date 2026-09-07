@@ -185,7 +185,7 @@ fn build_sequence_node(
     media_paths: &HashMap<String, String>,
 ) -> XMLNode {
     let (timebase, ntsc) = rate_tags(timeline.fps as f64);
-    let total_frames = timeline.duration();
+    let total_frames = timeline.total_frames();
 
     // Video tracks in XMEML are bottom-to-top, whereas timeline model is top-to-bottom.
     let mut video_tracks: Vec<&Track> = timeline

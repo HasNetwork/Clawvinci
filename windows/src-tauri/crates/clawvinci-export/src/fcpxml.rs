@@ -172,7 +172,7 @@ fn build_fcpxml_tree(
     // Build spine elements
     let spine_children = build_spine_elements(timeline, &asset_id_map, &effect_id, target);
 
-    let total_dur_str = format_fcpxml_time(timeline.duration(), timeline.fps);
+    let total_dur_str = format_fcpxml_time(timeline.total_frames(), timeline.fps);
 
     let sequence_node = XMLNode {
         name: "sequence".to_string(),
@@ -227,7 +227,7 @@ fn build_spine_elements(
     target: FCPXMLTarget,
 ) -> Vec<XMLNode> {
     let mut elements = Vec::new();
-    let total_duration = timeline.duration();
+    let total_duration = timeline.total_frames();
     let fps = timeline.fps;
 
     if timeline.tracks.is_empty() {
@@ -338,7 +338,7 @@ fn build_fcpxml_clip_node(
 
         let content = clip.text_content.clone().unwrap_or_default();
         let font_size = clip.text_style.as_ref().map(|s| s.font_size).unwrap_or(72.0);
-        let font_family = clip.text_style.as_ref().map(|s| s.font_family.clone()).unwrap_or_else(|| "Inter".to_string());
+        let font_family = clip.text_style.as_ref().map(|s| s.font_name.clone()).unwrap_or_else(|| "Inter".to_string());
 
         let text_style_id = format!("ts-{}", clip.id);
         let text_node = XMLNode {

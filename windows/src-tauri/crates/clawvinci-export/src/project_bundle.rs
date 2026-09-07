@@ -3,8 +3,7 @@
 // Derived from Sources/PalmierPro/Export/PalmierProjectExporter.swift (GPLv3).
 
 use crate::error::{ExportError, ExportResult};
-use clawvinci_model::manifest::{MediaManifest, MediaManifestEntry, MediaSource};
-use clawvinci_model::project::ProjectFile;
+use clawvinci_model::{MediaManifest, MediaManifestEntry, MediaSource, ProjectFile};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

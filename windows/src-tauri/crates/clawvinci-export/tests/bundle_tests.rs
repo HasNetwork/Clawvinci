@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use clawvinci_export::project_bundle::PalmierProjectExporter;
-use clawvinci_model::manifest::{MediaManifest, MediaManifestEntry, MediaSource};
-use clawvinci_model::project::ProjectFile;
-use clawvinci_model::timeline::Timeline;
+use clawvinci_model::{
+    ClipType, MediaManifest, MediaManifestEntry, MediaSource, ProjectFile, Timeline,
+};
 use tokio_util::sync::CancellationToken;
 
 #[tokio::test]
@@ -22,35 +22,27 @@ async fn test_palmier_project_exporter_bundle_roundtrip() {
 
     let mut timeline = Timeline::new(30, 1920, 1080);
     timeline.name = "Bundle Test".to_string();
-    let project_file = ProjectFile::from_timeline(timeline);
+    let project_file = ProjectFile::new(vec![timeline]);
 
     let mut manifest = MediaManifest::default();
-    manifest.entries.push(MediaManifestEntry {
-        id: "media-entry-1".to_string(),
-        name: "sample1.mp4".to_string(),
-        source: MediaSource::External {
+    manifest.entries.push(MediaManifestEntry::new(
+        "media-entry-1",
+        "sample1.mp4",
+        ClipType::Video,
+        MediaSource::External {
             path: dummy_media_1.to_string_lossy().to_string(),
         },
-        duration_frames: 100,
-        source_fps: Some(30.0),
-        width: Some(1920),
-        height: Some(1080),
-        audio_channels: None,
-        audio_sample_rate: None,
-    });
-    manifest.entries.push(MediaManifestEntry {
-        id: "media-entry-2".to_string(),
-        name: "sample2.wav".to_string(),
-        source: MediaSource::External {
+        10.0,
+    ));
+    manifest.entries.push(MediaManifestEntry::new(
+        "media-entry-2",
+        "sample2.wav",
+        ClipType::Audio,
+        MediaSource::External {
             path: dummy_media_2.to_string_lossy().to_string(),
         },
-        duration_frames: 200,
-        source_fps: None,
-        width: None,
-        height: None,
-        audio_channels: Some(2),
-        audio_sample_rate: Some(48000),
-    });
+        5.0,
+    ));
 
     let cancel_token = CancellationToken::new();
     let report = PalmierProjectExporter::export(

@@ -36,14 +36,14 @@ impl ExportService {
             .render_size(timeline.width as u32, timeline.height as u32);
 
         let fps = options.custom_fps.unwrap_or(timeline.fps as f64);
-        let total_frames = timeline.duration().max(1) as usize;
+        let total_frames = timeline.total_frames().max(1) as usize;
 
         let mut encode_opts = EncodeOptions::new(render_w, render_h, fps);
         encode_opts.codec = options.codec.media_codec();
         encode_opts.crf = options.crf;
         encode_opts.bitrate_kbps = options.bitrate_kbps;
 
-        let ffmpeg_ctx = FfmpegContext::default();
+        let ffmpeg_ctx = FfmpegContext::discover().await.map_err(ExportError::MediaError)?;
         let mut writer = VideoStreamWriter::open(&ffmpeg_ctx, output_path, &encode_opts)
             .map_err(ExportError::MediaError)?;
 

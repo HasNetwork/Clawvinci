@@ -34,7 +34,7 @@ fn test_fcpxml_exporter_renders_valid_fcpxml() {
     c2.media_type = ClipType::Text;
     c2.text_content = Some("Breaking News".to_string());
     c2.text_style = Some(TextStyle {
-        font_family: "Roboto".to_string(),
+        font_name: "Roboto".to_string(),
         font_size: 64.0,
         ..Default::default()
     });

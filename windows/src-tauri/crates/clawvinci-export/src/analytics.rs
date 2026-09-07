@@ -46,7 +46,7 @@ impl ExportTimelineAnalyticsSnapshot {
             }
         }
 
-        let total_frames = timeline.duration();
+        let total_frames = timeline.total_frames();
         let fps = timeline.fps.max(1) as f64;
         let total_duration_seconds = total_frames as f64 / fps;
 
