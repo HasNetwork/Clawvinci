@@ -7,8 +7,14 @@ description = "Phase 7: FCPXML and XML export, export queue, HDR export"
 
 [dependencies]
 clawvinci-model = { path = "../clawvinci-model" }
+clawvinci-media = { path = "../clawvinci-media" }
+clawvinci-timeline = { path = "../clawvinci-timeline" }
 clawvinci-render = { path = "../clawvinci-render" }
 serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
+tokio-util = { version = "0.7", features = ["sync"] }
 tracing.workspace = true
+uuid.workspace = true
+chrono.workspace = true

@@ -138,7 +138,12 @@ different mechanism:
 - Every phase's "Definition of done" in its `PLAN/*.md` doc is the
   acceptance bar — don't mark a subphase complete in `HISTORY.md` until
   it's met.
-- `cargo test` (or `cargo nextest run`) and `cargo clippy --workspace -- -D
-  warnings` must both pass before a subphase is considered done.
+- **No Local Tool Installation / Runs**: Do NOT install or run local `cargo`,
+  `rustc`, `npm`, or native build/test CLI tools on the user's host machine.
+  The host environment is strictly for agent file editing and git operations.
+- **GitHub CI is the Verification Environment**: All compilation, unit/integration
+  tests (`cargo test --workspace`), and linter runs (`cargo clippy --workspace -- -D warnings`)
+  are executed remotely on GitHub Actions CI (`.github/workflows/ci.yml`). Code must be
+  written carefully with high precision to pass CI cleanly on the first run.
 - State explicitly in the `HISTORY.md` log entry if anything was skipped,
   deferred, or only partially verified — per the global "fail loud" rule.

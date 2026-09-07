@@ -12,8 +12,9 @@ immediately after that subphase's commit.
 | 4 | 4.0 | Playback engine: FramePlan builder, CPU compositor with blend modes, PlaybackEngine, Tauri integration | [`4-0-playback-engine.md`](HISTORY/4-0-playback-engine.md) |
 | 5 | 5.0 | Effects pipeline: 12 shader algorithms ported, EffectRegistry, .cube LUTs & tetra interp, text rendering & animation | [`5-0-gpu-effects.md`](HISTORY/5-0-gpu-effects.md) |
 | 6 | 6.0 | UI shell: Premium Dark Design System, AppTheme tokens, multi-track timeline canvas, inspector, media panel, Tauri IPC | [`6-0-ui-shell.md`](HISTORY/6-0-ui-shell.md) |
+| 7 | 7.0 | Export engine: Batch render-to-file, FCPXML 1.10–1.14, Premiere XMEML 4, project bundle packager, export queue, UI modal | [`7-0-export.md`](HISTORY/7-0-export.md) |
 
 ## Handover & Continuation
 
-- **Active Handover Document**: [`Handover.md`](Handover.md) contains the exhaustive handover brief, current repository state, CI verification, and the complete implementation blueprint for Phase 7.0 (Export Engine).
+- **Completed Milestone**: Phase 7.0 (Export Engine) implemented, tested, and integrated. Ready for Phase 8.0 (MCP Agent Layer — 53 tools, embedded HTTP MCP server, in-app agent chat orchestration).
 

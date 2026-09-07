@@ -633,6 +633,195 @@
         display: flex;
         gap: var(--space-md);
       }
+
+      /* Export Modal */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .modal-backdrop.open {
+        display: flex;
+      }
+      .modal-dialog {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-divider);
+        border-radius: var(--radius-md);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6);
+        width: 560px;
+        max-width: 90vw;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .modal-header {
+        height: 44px;
+        padding: 0 var(--space-lg);
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-raised);
+      }
+      .modal-title {
+        font-size: var(--font-sm-md);
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .modal-close-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        font-size: 16px;
+        padding: 4px;
+        border-radius: var(--radius-xs);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-close-btn:hover {
+        color: var(--text-primary);
+        background: var(--bg-hover);
+      }
+      .modal-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border-subtle);
+        background: var(--bg-base);
+      }
+      .modal-tab-btn {
+        flex: 1;
+        padding: 8px 12px;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: var(--text-secondary);
+        font-size: var(--font-xs);
+        font-weight: 500;
+        cursor: pointer;
+        transition: color var(--anim-hover), border-color var(--anim-hover);
+      }
+      .modal-tab-btn:hover {
+        color: var(--text-primary);
+      }
+      .modal-tab-btn.active {
+        color: var(--text-primary);
+        border-bottom-color: var(--accent-primary);
+        background: var(--bg-raised);
+      }
+      .modal-body {
+        padding: var(--space-lg);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+      }
+      .export-tab-content {
+        display: none;
+        flex-direction: column;
+        gap: var(--space-md);
+      }
+      .export-tab-content.active {
+        display: flex;
+      }
+      .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .form-row-h {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-md);
+      }
+      .form-label {
+        font-size: var(--font-xs);
+        color: var(--text-secondary);
+      }
+      .form-select, .form-input {
+        background: var(--bg-raised);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xs);
+        color: var(--text-primary);
+        padding: 6px 10px;
+        font-size: var(--font-xs);
+        outline: none;
+      }
+      .form-select:focus, .form-input:focus {
+        border-color: var(--border-focus);
+      }
+      .modal-footer {
+        padding: var(--space-md) var(--space-lg);
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--space-sm);
+        background: var(--bg-surface);
+      }
+      .queue-item {
+        background: var(--bg-raised);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-xs);
+        padding: var(--space-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .queue-item-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--font-xs);
+      }
+      .queue-filename {
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+      .queue-status-badge {
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: var(--radius-xs);
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .queue-status-badge.rendering {
+        background: rgba(64, 148, 255, 0.2);
+        color: var(--accent-link);
+      }
+      .queue-status-badge.completed {
+        background: rgba(79, 184, 95, 0.2);
+        color: var(--status-success);
+      }
+      .queue-status-badge.failed {
+        background: rgba(229, 79, 79, 0.2);
+        color: var(--status-error);
+      }
+      .queue-status-badge.queued {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--status-warning);
+      }
+      .queue-progress-bar {
+        height: 4px;
+        background: var(--bg-base);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .queue-progress-fill {
+        height: 100%;
+        background: var(--accent-primary);
+        transition: width 0.2s ease;
+      }
     </style>
   </head>
   <body>
@@ -678,7 +867,15 @@
 
         <div class="header-right">
           <button class="btn" id="btn-add-track" title="Insert new track">+ Track</button>
-          <div class="phase-badge">Phase 6.0 — UI Shell</div>
+          <button class="btn primary" id="btn-open-export" title="Export Timeline / Project">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>Export</span>
+          </button>
+          <div class="phase-badge">Phase 7.0 — Export Engine</div>
         </div>
       </header>
 
@@ -737,6 +934,135 @@
           </div>
         </div>
       </main>
+
+      <!-- Export Modal Dialog -->
+      <div class="modal-backdrop" id="export-modal-backdrop">
+        <div class="modal-dialog">
+          <div class="modal-header">
+            <div class="modal-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Export Timeline & Interchange</span>
+            </div>
+            <button class="modal-close-btn" id="btn-close-export" title="Close">✕</button>
+          </div>
+
+          <div class="modal-tabs">
+            <button class="modal-tab-btn active" data-tab="tab-render">Render Video</button>
+            <button class="modal-tab-btn" data-tab="tab-interchange">Interchange (FCPXML/XML)</button>
+            <button class="modal-tab-btn" data-tab="tab-bundle">Project Bundle</button>
+            <button class="modal-tab-btn" data-tab="tab-queue">Queue & Activity</button>
+          </div>
+
+          <div class="modal-body">
+            <!-- Tab 1: Render Video -->
+            <div class="export-tab-content active" id="tab-render">
+              <div class="form-row">
+                <label class="form-label">Output File Path</label>
+                <input type="text" class="form-input" id="export-video-path" value="C:/Exports/Timeline_Render.mp4" />
+              </div>
+
+              <div class="form-row-h">
+                <div class="form-row" style="flex:1">
+                  <label class="form-label">Resolution Preset</label>
+                  <select class="form-select" id="export-video-res">
+                    <option value="1080p" selected>1080p (Full HD - 1920x1080)</option>
+                    <option value="720p">720p (HD - 1280x720)</option>
+                    <option value="2K">2K (1440p)</option>
+                    <option value="4K">4K (UHD - 3840x2160)</option>
+                    <option value="Match Timeline">Match Timeline</option>
+                  </select>
+                </div>
+                <div class="form-row" style="flex:1">
+                  <label class="form-label">Codec & Container</label>
+                  <select class="form-select" id="export-video-codec">
+                    <option value="H.264" selected>H.264 (.mp4)</option>
+                    <option value="H.265">H.265 / HEVC (.mp4)</option>
+                    <option value="ProRes">Apple ProRes (.mov)</option>
+                    <option value="HEVC 10-bit HDR">HEVC 10-bit HDR (.mov)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row-h">
+                <div class="form-row" style="flex:1">
+                  <label class="form-label">Constant Rate Factor (CRF)</label>
+                  <input type="number" class="form-input" id="export-video-crf" value="18" min="0" max="51" />
+                </div>
+                <div class="form-row" style="flex:1">
+                  <label class="form-label">Target Bitrate (Optional kbps)</label>
+                  <input type="number" class="form-input" id="export-video-bitrate" placeholder="Auto" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 2: Interchange Export -->
+            <div class="export-tab-content" id="tab-interchange">
+              <div class="form-row">
+                <label class="form-label">Interchange Format</label>
+                <select class="form-select" id="export-interchange-format">
+                  <option value="fcpxml" selected>Final Cut Pro / DaVinci Resolve (FCPXML)</option>
+                  <option value="xmeml">Adobe Premiere Pro / FCP 7 (XMEML v4)</option>
+                </select>
+              </div>
+
+              <div class="form-row" id="row-fcpxml-target">
+                <label class="form-label">Target Application Dialect</label>
+                <select class="form-select" id="export-fcpxml-target">
+                  <option value="resolve" selected>DaVinci Resolve 18+ (Optimized Scaling)</option>
+                  <option value="fcp">Final Cut Pro (Standard Conform)</option>
+                </select>
+              </div>
+
+              <div class="form-row" id="row-fcpxml-version">
+                <label class="form-label">FCPXML Version</label>
+                <select class="form-select" id="export-fcpxml-version">
+                  <option value="1.10" selected>1.10 (Broadest DaVinci Resolve 18+ Support)</option>
+                  <option value="1.11">1.11 (Resolve 21+ / FCP 10.7+)</option>
+                  <option value="1.12">1.12 (Resolve 21+ / FCP 10.8+)</option>
+                  <option value="1.13">1.13 (Resolve 21+ / FCP 11+)</option>
+                  <option value="1.14">1.14 (Resolve 21+ / FCP 12+)</option>
+                </select>
+              </div>
+
+              <div class="form-row">
+                <label class="form-label">Output Path</label>
+                <input type="text" class="form-input" id="export-interchange-path" value="C:/Exports/Timeline.fcpxml" />
+              </div>
+            </div>
+
+            <!-- Tab 3: Project Bundle -->
+            <div class="export-tab-content" id="tab-bundle">
+              <div class="form-row">
+                <label class="form-label">Package Destination (.palmier)</label>
+                <input type="text" class="form-input" id="export-bundle-path" value="C:/Exports/MyProject.palmier" />
+              </div>
+              <p style="font-size:11px;color:var(--text-tertiary);line-height:1.5;margin:0;">
+                Packaging creates a fully self-contained bundle directory. All externally referenced video, audio, and image assets are deduplicated, copied into <code>media/</code>, and internal paths are automatically rewritten.
+              </p>
+            </div>
+
+            <!-- Tab 4: Queue & Activity -->
+            <div class="export-tab-content" id="tab-queue">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span class="form-label">Active & Recent Jobs</span>
+                <button class="btn" id="btn-clear-queue-finished" style="font-size:10px;padding:2px 8px;">Clear Finished</button>
+              </div>
+              <div id="export-queue-list-container" style="display:flex;flex-direction:column;gap:8px;min-height:120px;">
+                <div style="text-align:center;padding:32px;color:var(--text-muted);font-size:var(--font-xs);">No active or recent export jobs</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn" id="btn-cancel-export-modal">Close</button>
+            <button class="btn primary" id="btn-submit-export">Start Export</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Status Footer -->
       <footer>
@@ -1130,6 +1456,191 @@
         } else if (e.code === 'Delete' || e.code === 'Backspace') {
           e.preventDefault();
           btnRippleDelete.click();
+        }
+      });
+
+      // Export Modal Logic
+      const btnOpenExport = document.getElementById('btn-open-export');
+      const exportModalBackdrop = document.getElementById('export-modal-backdrop');
+      const btnCloseExport = document.getElementById('btn-close-export');
+      const btnCancelExportModal = document.getElementById('btn-cancel-export-modal');
+      const btnSubmitExport = document.getElementById('btn-submit-export');
+      const btnClearQueueFinished = document.getElementById('btn-clear-queue-finished');
+      const modalTabBtns = document.querySelectorAll('.modal-tab-btn');
+      let activeExportTab = 'tab-render';
+      let queuePollInterval = null;
+
+      function openExportModal() {
+        exportModalBackdrop.classList.add('open');
+        refreshExportQueue();
+        if (!queuePollInterval) {
+          queuePollInterval = setInterval(refreshExportQueue, 1500);
+        }
+      }
+
+      function closeExportModal() {
+        exportModalBackdrop.classList.remove('open');
+        if (queuePollInterval) {
+          clearInterval(queuePollInterval);
+          queuePollInterval = null;
+        }
+      }
+
+      if (btnOpenExport) btnOpenExport.addEventListener('click', openExportModal);
+      if (btnCloseExport) btnCloseExport.addEventListener('click', closeExportModal);
+      if (btnCancelExportModal) btnCancelExportModal.addEventListener('click', closeExportModal);
+
+      exportModalBackdrop.addEventListener('click', (e) => {
+        if (e.target === exportModalBackdrop) closeExportModal();
+      });
+
+      modalTabBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          modalTabBtns.forEach((b) => b.classList.remove('active'));
+          document.querySelectorAll('.export-tab-content').forEach((c) => c.classList.remove('active'));
+          btn.classList.add('active');
+          activeExportTab = btn.dataset.tab;
+          const targetContent = document.getElementById(activeExportTab);
+          if (targetContent) targetContent.classList.add('active');
+
+          if (activeExportTab === 'tab-queue') {
+            btnSubmitExport.style.display = 'none';
+          } else {
+            btnSubmitExport.style.display = 'inline-flex';
+            if (activeExportTab === 'tab-render') btnSubmitExport.textContent = 'Start Render';
+            else if (activeExportTab === 'tab-interchange') btnSubmitExport.textContent = 'Export XML';
+            else if (activeExportTab === 'tab-bundle') btnSubmitExport.textContent = 'Package Bundle';
+          }
+        });
+      });
+
+      const interchangeFormatSelect = document.getElementById('export-interchange-format');
+      const fcpxmlTargetRow = document.getElementById('row-fcpxml-target');
+      const fcpxmlVersionRow = document.getElementById('row-fcpxml-version');
+      const interchangePathInput = document.getElementById('export-interchange-path');
+
+      if (interchangeFormatSelect) {
+        interchangeFormatSelect.addEventListener('change', (e) => {
+          const isFcp = e.target.value === 'fcpxml';
+          fcpxmlTargetRow.style.display = isFcp ? 'flex' : 'none';
+          fcpxmlVersionRow.style.display = isFcp ? 'flex' : 'none';
+          interchangePathInput.value = isFcp ? 'C:/Exports/Timeline.fcpxml' : 'C:/Exports/Timeline.xml';
+        });
+      }
+
+      async function refreshExportQueue() {
+        try {
+          const list = await invoke('export_queue_list');
+          const container = document.getElementById('export-queue-list-container');
+          if (!container) return;
+
+          if (!list || list.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:var(--font-xs);">No active or recent export jobs</div>';
+            return;
+          }
+
+          container.innerHTML = list.map((job) => {
+            const pct = Math.round((job.progress || 0) * 100);
+            const statusClass = job.status || 'queued';
+            return `
+              <div class="queue-item">
+                <div class="queue-item-header">
+                  <span class="queue-filename">${job.filename}</span>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span class="queue-status-badge ${statusClass}">${job.status}</span>
+                    ${job.status === 'queued' || job.status === 'rendering' || job.status === 'preparing'
+                      ? `<button class="btn btn-cancel-job" data-id="${job.id}" style="font-size:9px;padding:1px 5px;">Cancel</button>`
+                      : ''}
+                  </div>
+                </div>
+                <div class="queue-progress-bar">
+                  <div class="queue-progress-fill" style="width: ${pct}%"></div>
+                </div>
+                ${job.error ? `<div style="font-size:10px;color:var(--status-error);">${job.error}</div>` : ''}
+              </div>
+            `;
+          }).join('');
+
+          container.querySelectorAll('.btn-cancel-job').forEach((b) => {
+            b.addEventListener('click', async (e) => {
+              const jobId = e.target.dataset.id;
+              try {
+                await invoke('export_queue_cancel', { payload: { jobId } });
+                refreshExportQueue();
+              } catch (err) {
+                console.error('Cancel job failed:', err);
+              }
+            });
+          });
+        } catch (e) {
+          console.warn('Queue poll failed:', e);
+        }
+      }
+
+      if (btnClearQueueFinished) {
+        btnClearQueueFinished.addEventListener('click', async () => {
+          try {
+            await invoke('export_queue_clear_finished');
+            refreshExportQueue();
+          } catch (err) {
+            console.error(err);
+          }
+        });
+      }
+
+      btnSubmitExport.addEventListener('click', async () => {
+        try {
+          btnSubmitExport.disabled = true;
+          if (activeExportTab === 'tab-render') {
+            const outputPath = document.getElementById('export-video-path').value;
+            const resolution = document.getElementById('export-video-res').value;
+            const codec = document.getElementById('export-video-codec').value;
+            const crf = parseInt(document.getElementById('export-video-crf').value, 10) || 18;
+            const bitrateVal = document.getElementById('export-video-bitrate').value;
+            const bitrateKbps = bitrateVal ? parseInt(bitrateVal, 10) : null;
+            const isHdr = codec.includes('HDR');
+
+            await invoke('export_enqueue_video', {
+              payload: {
+                outputPath,
+                resolution,
+                codec,
+                crf,
+                bitrateKbps,
+                isHdr,
+              },
+            });
+
+            // Switch to queue tab
+            document.querySelector('[data-tab="tab-queue"]').click();
+          } else if (activeExportTab === 'tab-interchange') {
+            const format = document.getElementById('export-interchange-format').value;
+            const target = document.getElementById('export-fcpxml-target').value;
+            const version = document.getElementById('export-fcpxml-version').value;
+            const outputPath = document.getElementById('export-interchange-path').value;
+
+            await invoke('export_enqueue_timeline', {
+              payload: {
+                outputPath,
+                format,
+                target,
+                version,
+              },
+            });
+
+            // Switch to queue tab
+            document.querySelector('[data-tab="tab-queue"]').click();
+          } else if (activeExportTab === 'tab-bundle') {
+            const destinationPath = document.getElementById('export-bundle-path').value;
+            const rep = await invoke('export_enqueue_project_bundle', {
+              payload: { destinationPath },
+            });
+            alert(`Project bundle created successfully!\nCollected assets: ${rep.collectedCount}\nTotal bytes: ${rep.totalBytes}`);
+          }
+        } catch (e) {
+          alert(`Export failed: ${e}`);
+        } finally {
+          btnSubmitExport.disabled = false;
         }
       });
 

@@ -11,10 +11,24 @@ use clawvinci_timeline::editor::TimelineEditor;
 use clawvinci_timeline::error::TimelineError;
 use clawvinci_timeline::ripple::TrimEdge;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
-use std::path::Path;
+use clawvinci_export::error::ExportError;
+use clawvinci_export::fcpxml::FCPXMLExporter;
+use clawvinci_export::options::{
+    FCPXMLTarget, FCPXMLVersion, VideoExportOptions,
+};
+use clawvinci_export::project_bundle::PalmierProjectExporter;
+use clawvinci_export::queue::{
+    ExportJob, ExportJobSource, ExportJobStatus, ExportQueue,
+};
+use clawvinci_export::service::ExportService;
+use clawvinci_export::xml::XMLExporter;
+use clawvinci_model::manifest::MediaManifest;
+use clawvinci_model::project::ProjectFile;
+use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,10 +61,86 @@ pub struct FrameRenderResult {
     pub rgba_base64: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VideoExportPayload {
+    pub output_path: String,
+    pub resolution: Option<String>,
+    pub codec: Option<String>,
+    pub crf: Option<u32>,
+    pub bitrate_kbps: Option<u32>,
+    pub is_hdr: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TimelineExportPayload {
+    pub output_path: String,
+    pub format: String,
+    pub target: Option<String>,
+    pub version: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BundleExportPayload {
+    pub destination_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CancelJobPayload {
+    pub job_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportJobDto {
+    pub id: String,
+    pub project_id: String,
+    pub filename: String,
+    pub status: String,
+    pub progress: f64,
+    pub error: Option<String>,
+    pub warnings: Vec<String>,
+}
+
+impl From<&ExportJob> for ExportJobDto {
+    fn from(job: &ExportJob) -> Self {
+        Self {
+            id: job.id.to_string(),
+            project_id: job.project_id.clone(),
+            filename: job.filename.clone(),
+            status: format!("{:?}", job.status).to_lowercase(),
+            progress: job.progress,
+            error: job.error.clone(),
+            warnings: job.warnings.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportQueueSubmissionDto {
+    pub job_id: String,
+    pub started: bool,
+    pub queue_position: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectBundleReportDto {
+    pub collected_count: usize,
+    pub missing_count: usize,
+    pub total_bytes: u64,
+    pub warnings: Vec<String>,
+}
+
 pub struct AppState {
     pub editor: TimelineEditor,
     pub engine: PlaybackEngine,
     pub media_items: Vec<MediaItemDto>,
+    pub export_queue: ExportQueue,
 }
 
 type SharedState = Arc<Mutex<AppState>>;
@@ -463,6 +553,221 @@ async fn media_import(path: String, state: tauri::State<'_, SharedState>) -> Res
     Ok(item)
 }
 
+// MARK: - Export Commands
+
+async fn process_export_queue(state: SharedState) {
+    loop {
+        let (job_id, cancel_token, output_path) = {
+            let mut app = state.lock().await;
+            if let Some((id, token)) = app.export_queue.next_waiting_job() {
+                if let Some(job) = app.export_queue.get_job(id) {
+                    (id, token, job.output_path.clone())
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        };
+
+        let (timeline, sources) = {
+            let app = state.lock().await;
+            (app.editor.timeline().clone(), HashMap::new())
+        };
+
+        let state_cb = Arc::clone(&state);
+        let progress_cb = move |progress: f64| {
+            let state_inner = Arc::clone(&state_cb);
+            tokio::spawn(async move {
+                let mut app = state_inner.lock().await;
+                app.export_queue.update_progress(job_id, progress);
+            });
+        };
+
+        let opts = VideoExportOptions::default();
+        let res = ExportService::render_timeline_to_file(
+            &timeline,
+            &opts,
+            &output_path,
+            &sources,
+            cancel_token,
+            progress_cb,
+        )
+        .await;
+
+        let mut app = state.lock().await;
+        match res {
+            Ok(_) => app.export_queue.finish_job(job_id, ExportJobStatus::Completed, None, vec![]),
+            Err(ExportError::Cancelled) => app.export_queue.finish_job(
+                job_id,
+                ExportJobStatus::Canceled,
+                Some("Cancelled by user".to_string()),
+                vec![],
+            ),
+            Err(e) => app.export_queue.finish_job(
+                job_id,
+                ExportJobStatus::Failed,
+                Some(e.to_string()),
+                vec![],
+            ),
+        }
+    }
+}
+
+#[tauri::command]
+async fn export_enqueue_video(
+    payload: VideoExportPayload,
+    state: tauri::State<'_, SharedState>,
+) -> Result<ExportQueueSubmissionDto, String> {
+    let output_path = PathBuf::from(&payload.output_path);
+    let mut app = state.lock().await;
+
+    let sub = app
+        .export_queue
+        .enqueue(
+            "default-project".to_string(),
+            output_path,
+            ExportJobSource::Manual,
+            vec![],
+        )
+        .map_err(|e| e.to_string())?;
+
+    let started = sub.started;
+    let dto = ExportQueueSubmissionDto {
+        job_id: sub.job_id.to_string(),
+        started: sub.started,
+        queue_position: sub.queue_position,
+    };
+
+    drop(app);
+
+    if started {
+        let state_clone = Arc::clone(state.inner());
+        tokio::spawn(async move {
+            process_export_queue(state_clone).await;
+        });
+    }
+
+    Ok(dto)
+}
+
+#[tauri::command]
+async fn export_enqueue_timeline(
+    payload: TimelineExportPayload,
+    state: tauri::State<'_, SharedState>,
+) -> Result<ExportQueueSubmissionDto, String> {
+    let output_path = PathBuf::from(&payload.output_path);
+    let mut app = state.lock().await;
+
+    let sub = app
+        .export_queue
+        .enqueue(
+            "default-project".to_string(),
+            output_path.clone(),
+            ExportJobSource::Manual,
+            vec![],
+        )
+        .map_err(|e| e.to_string())?;
+
+    let job_id = sub.job_id;
+    let timeline = app.editor.timeline().clone();
+    let media_paths: HashMap<String, String> = app
+        .media_items
+        .iter()
+        .map(|m| (m.id.clone(), m.path.clone()))
+        .collect();
+
+    let format_lower = payload.format.to_lowercase();
+    let res = match format_lower.as_str() {
+        "xmeml" | "xml" => XMLExporter::export_to_file(&timeline, &media_paths, &output_path),
+        "fcpxml" => {
+            let target = match payload.target.as_deref() {
+                Some("fcp") => FCPXMLTarget::FinalCutPro,
+                _ => FCPXMLTarget::Resolve,
+            };
+            let version = match payload.version.as_deref() {
+                Some("1.11") => FCPXMLVersion::V1_11,
+                Some("1.12") => FCPXMLVersion::V1_12,
+                Some("1.13") => FCPXMLVersion::V1_13,
+                Some("1.14") => FCPXMLVersion::V1_14,
+                _ => FCPXMLVersion::V1_10,
+            };
+            FCPXMLExporter::export_to_file(&timeline, &media_paths, version, target, &output_path)
+        }
+        other => Err(ExportError::InvalidFormat(other.to_string())),
+    };
+
+    match res {
+        Ok(_) => app.export_queue.finish_job(job_id, ExportJobStatus::Completed, None, vec![]),
+        Err(e) => app.export_queue.finish_job(job_id, ExportJobStatus::Failed, Some(e.to_string()), vec![]),
+    }
+
+    Ok(ExportQueueSubmissionDto {
+        job_id: sub.job_id.to_string(),
+        started: true,
+        queue_position: 1,
+    })
+}
+
+#[tauri::command]
+async fn export_enqueue_project_bundle(
+    payload: BundleExportPayload,
+    state: tauri::State<'_, SharedState>,
+) -> Result<ProjectBundleReportDto, String> {
+    let dest_path = PathBuf::from(&payload.destination_path);
+    let app = state.lock().await;
+    let timeline = app.editor.timeline().clone();
+    let project_file = ProjectFile::from_timeline(timeline);
+    let manifest = MediaManifest::default();
+    drop(app);
+
+    let cancel_token = tokio_util::sync::CancellationToken::new();
+    let report = PalmierProjectExporter::export(
+        &project_file,
+        &manifest,
+        None,
+        &dest_path,
+        cancel_token,
+        None,
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(ProjectBundleReportDto {
+        collected_count: report.collected.len(),
+        missing_count: report.missing.len(),
+        total_bytes: report.total_bytes,
+        warnings: report.warnings(),
+    })
+}
+
+#[tauri::command]
+async fn export_queue_list(
+    state: tauri::State<'_, SharedState>,
+) -> Result<Vec<ExportJobDto>, String> {
+    let app = state.lock().await;
+    Ok(app.export_queue.jobs().iter().map(ExportJobDto::from).collect())
+}
+
+#[tauri::command]
+async fn export_queue_cancel(
+    payload: CancelJobPayload,
+    state: tauri::State<'_, SharedState>,
+) -> Result<bool, String> {
+    let uuid = Uuid::parse_str(&payload.job_id).map_err(|e| e.to_string())?;
+    let mut app = state.lock().await;
+    Ok(app.export_queue.cancel(uuid))
+}
+
+#[tauri::command]
+async fn export_queue_clear_finished(
+    state: tauri::State<'_, SharedState>,
+) -> Result<(), String> {
+    let mut app = state.lock().await;
+    app.export_queue.clear_finished(None);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut timeline = Timeline::new(30, 1920, 1080);
@@ -539,10 +844,12 @@ pub fn run() {
 
     let editor = TimelineEditor::new(timeline.clone());
     let engine = PlaybackEngine::new(timeline);
+    let export_queue = ExportQueue::new();
     let state: SharedState = Arc::new(Mutex::new(AppState {
         editor,
         engine,
         media_items,
+        export_queue,
     }));
 
     tauri::Builder::default()
@@ -572,6 +879,12 @@ pub fn run() {
             timeline_update_clip_text,
             media_list,
             media_import,
+            export_enqueue_video,
+            export_enqueue_timeline,
+            export_enqueue_project_bundle,
+            export_queue_list,
+            export_queue_cancel,
+            export_queue_clear_finished,
         ])
         .setup(|_app| Ok(()))
         .run(tauri::generate_context!())
