@@ -93,9 +93,10 @@ async fn handle_json_rpc(
 }
 
 async fn handle_sse() -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-    let stream = stream::repeat_with(|| {
-        Ok(Event::default().comment("keepalive"))
-    });
+    let stream = stream::once(async {
+        Ok(Event::default().event("endpoint").data("/mcp"))
+    })
+    .chain(stream::pending());
     Sse::new(stream).keep_alive(KeepAlive::new().interval(Duration::from_secs(15)))
 }
 

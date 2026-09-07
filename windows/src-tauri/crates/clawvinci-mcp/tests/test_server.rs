@@ -128,8 +128,10 @@ async fn test_mcp_http_server_endpoints() {
             .and_then(|v| v.to_str().ok()),
         Some("text/event-stream")
     );
+    drop(sse_resp);
+    drop(client);
 
     // Teardown server
     cancel_token.cancel();
-    let _ = server_handle.await;
+    server_handle.abort();
 }
