@@ -3,13 +3,24 @@ name = "clawvinci-mcp"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Phase 8: HTTP/SSE MCP server and 53-tool executor"
+description = "Phase 8: Embedded HTTP/SSE MCP server and 52-tool execution engine"
 
 [dependencies]
 clawvinci-model = { path = "../clawvinci-model" }
 clawvinci-timeline = { path = "../clawvinci-timeline" }
+clawvinci-media = { path = "../clawvinci-media" }
+clawvinci-render = { path = "../clawvinci-render" }
+clawvinci-export = { path = "../clawvinci-export" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
+tokio-util.workspace = true
 tracing.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+axum = { version = "0.7", features = ["tokio"] }
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+reqwest = { version = "0.12", features = ["json", "stream"] }
+futures-util = "0.3"
+tokio-stream = { version = "0.1", features = ["sync"] }

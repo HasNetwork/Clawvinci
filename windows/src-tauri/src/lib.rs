@@ -22,11 +22,15 @@ use clawvinci_export::queue::{
 };
 use clawvinci_export::service::ExportService;
 use clawvinci_export::xml::XMLExporter;
+use clawvinci_mcp::{
+    all_tool_definitions, AgentService, McpMediaItem, McpState, SharedMcpState, DEFAULT_MCP_PORT,
+};
 use clawvinci_model::{MediaManifest, ProjectFile};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -135,11 +139,39 @@ pub struct ProjectBundleReportDto {
     pub warnings: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentChatResponseDto {
+    pub reply: String,
+    pub tools_called: Vec<String>,
+    pub session_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatMessageDto {
+    pub id: String,
+    pub role: String,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct McpServerStatusDto {
+    pub running: bool,
+    pub port: u16,
+    pub url: String,
+    pub tools_count: usize,
+}
+
 pub struct AppState {
     pub editor: TimelineEditor,
     pub engine: PlaybackEngine,
     pub media_items: Vec<MediaItemDto>,
     pub export_queue: ExportQueue,
+    pub mcp_state: SharedMcpState,
+    pub agent_service: Arc<AgentService>,
+    pub mcp_cancel_token: CancellationToken,
 }
 
 type SharedState = Arc<Mutex<AppState>>;
@@ -767,6 +799,81 @@ async fn export_queue_clear_finished(
     Ok(())
 }
 
+// MARK: - Agent Chat & MCP Server Commands
+
+#[tauri::command]
+async fn agent_chat_send(
+    message: String,
+    session_id: Option<String>,
+    state: tauri::State<'_, SharedState>,
+) -> Result<AgentChatResponseDto, String> {
+    let service = {
+        let app = state.lock().await;
+        app.agent_service.clone()
+    };
+
+    let resp = service.send_message(&message, session_id, None).await?;
+
+    let mut app = state.lock().await;
+    let mcp = app.mcp_state.lock().await;
+    app.editor = mcp.editor.clone();
+    app.engine.set_timeline(mcp.editor.timeline().clone());
+
+    Ok(AgentChatResponseDto {
+        reply: resp.reply,
+        tools_called: resp.tools_called,
+        session_id: resp.session_id,
+    })
+}
+
+#[tauri::command]
+async fn agent_chat_history(
+    session_id: Option<String>,
+    state: tauri::State<'_, SharedState>,
+) -> Result<Vec<ChatMessageDto>, String> {
+    let service = {
+        let app = state.lock().await;
+        app.agent_service.clone()
+    };
+
+    let messages = service.get_history(session_id).await;
+    Ok(messages
+        .into_iter()
+        .map(|m| ChatMessageDto {
+            id: m.id,
+            role: format!("{:?}", m.role).to_lowercase(),
+            text: m.text_content(),
+        })
+        .collect())
+}
+
+#[tauri::command]
+async fn agent_chat_clear(
+    session_id: Option<String>,
+    state: tauri::State<'_, SharedState>,
+) -> Result<(), String> {
+    let service = {
+        let app = state.lock().await;
+        app.agent_service.clone()
+    };
+
+    if let Some(id) = session_id {
+        service.clear_history(&id).await;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn mcp_server_status() -> Result<McpServerStatusDto, String> {
+    let tools = all_tool_definitions();
+    Ok(McpServerStatusDto {
+        running: true,
+        port: DEFAULT_MCP_PORT,
+        url: format!("http://127.0.0.1:{DEFAULT_MCP_PORT}/mcp"),
+        tools_count: tools.len(),
+    })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut timeline = Timeline::new(30, 1920, 1080);
@@ -841,6 +948,39 @@ pub fn run() {
         },
     ];
 
+    let mcp_items: Vec<McpMediaItem> = media_items
+        .iter()
+        .map(|m| McpMediaItem {
+            id: m.id.clone(),
+            name: m.name.clone(),
+            path: m.path.clone(),
+            media_type: m.media_type.clone(),
+            duration_seconds: m.duration_seconds,
+            width: m.width,
+            height: m.height,
+            fps: m.fps,
+            has_audio: m.media_type == "audio" || m.media_type == "video",
+            folder: None,
+            generation_prompt: None,
+            generation_status: None,
+        })
+        .collect();
+
+    let mcp_state: SharedMcpState = Arc::new(tokio::sync::Mutex::new(McpState::new(
+        timeline.clone(),
+        mcp_items,
+        ExportQueue::new(),
+    )));
+
+    let mcp_cancel_token = CancellationToken::new();
+    clawvinci_mcp::start_mcp_server(
+        DEFAULT_MCP_PORT,
+        mcp_state.clone(),
+        mcp_cancel_token.clone(),
+    );
+
+    let agent_service = Arc::new(AgentService::new(mcp_state.clone()));
+
     let editor = TimelineEditor::new(timeline.clone());
     let engine = PlaybackEngine::new(timeline);
     let export_queue = ExportQueue::new();
@@ -849,6 +989,9 @@ pub fn run() {
         engine,
         media_items,
         export_queue,
+        mcp_state,
+        agent_service,
+        mcp_cancel_token,
     }));
 
     tauri::Builder::default()
@@ -884,6 +1027,10 @@ pub fn run() {
             export_queue_list,
             export_queue_cancel,
             export_queue_clear_finished,
+            agent_chat_send,
+            agent_chat_history,
+            agent_chat_clear,
+            mcp_server_status,
         ])
         .setup(|_app| Ok(()))
         .run(tauri::generate_context!())
