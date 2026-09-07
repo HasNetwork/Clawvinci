@@ -814,10 +814,16 @@ async fn agent_chat_send(
 
     let resp = service.send_message(&message, session_id, None).await?;
 
-    let mut app = state.lock().await;
-    let mcp = app.mcp_state.lock().await;
-    app.editor = mcp.editor.clone();
-    app.engine.set_timeline(mcp.editor.timeline().clone());
+    let (cloned_editor, cloned_timeline) = {
+        let app = state.lock().await;
+        let mcp = app.mcp_state.lock().await;
+        (mcp.editor.clone(), mcp.editor.timeline().clone())
+    };
+    {
+        let mut app = state.lock().await;
+        app.editor = cloned_editor;
+        app.engine.set_timeline(cloned_timeline);
+    }
 
     Ok(AgentChatResponseDto {
         reply: resp.reply,
@@ -839,10 +845,14 @@ async fn agent_chat_history(
     let messages = service.get_history(session_id).await;
     Ok(messages
         .into_iter()
-        .map(|m| ChatMessageDto {
-            id: m.id,
-            role: format!("{:?}", m.role).to_lowercase(),
-            text: m.text_content(),
+        .map(|m| {
+            let text = m.text_content();
+            let role = format!("{:?}", m.role).to_lowercase();
+            ChatMessageDto {
+                id: m.id,
+                role,
+                text,
+            }
         })
         .collect())
 }
