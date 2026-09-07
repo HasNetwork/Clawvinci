@@ -59,7 +59,6 @@ pub struct McpSkill {
 
 /// Authoritative mutable domain state shared across the MCP HTTP server,
 /// in-app agent chat, and the Tauri desktop shell.
-#[derive(Debug)]
 pub struct McpState {
     pub editor: TimelineEditor,
     pub media_items: Vec<McpMediaItem>,
@@ -71,6 +70,21 @@ pub struct McpState {
     pub child_timelines: HashMap<String, Timeline>,
     pub skills: Vec<McpSkill>,
     pub version: u64,
+}
+
+impl std::fmt::Debug for McpState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("McpState")
+            .field("media_items", &self.media_items)
+            .field("markers", &self.markers)
+            .field("active_project_path", &self.active_project_path)
+            .field("active_project_name", &self.active_project_name)
+            .field("active_timeline_id", &self.active_timeline_id)
+            .field("child_timelines_count", &self.child_timelines.len())
+            .field("skills_count", &self.skills.len())
+            .field("version", &self.version)
+            .finish()
+    }
 }
 
 impl McpState {

@@ -23,20 +23,25 @@ pub fn apply_effect(args: &Value, state: &mut McpState) -> ToolResult {
             for clip in &mut track.clips {
                 if clip.id == clip_id {
                     if action == "remove" {
-                        clip.effects.retain(|e| e.effect_type != effect_type);
+                        if let Some(fx_list) = &mut clip.effects {
+                            fx_list.retain(|e| e.effect_type != effect_type);
+                        }
                     } else {
                         let mut fx = Effect::new(effect_type);
                         if let Some(params_obj) = args.get("params").and_then(|v| v.as_object()) {
                             for (k, v) in params_obj {
                                 if let Some(f) = v.as_f64() {
-                                    fx.params.insert(k.clone(), EffectParam::Float(f));
+                                    fx.params.insert(k.clone(), EffectParam::from_value(f));
                                 } else if let Some(b) = v.as_bool() {
-                                    fx.params.insert(k.clone(), EffectParam::Bool(b));
+                                    fx.params.insert(k.clone(), EffectParam::from_value(if b { 1.0 } else { 0.0 }));
+                                } else if let Some(s) = v.as_str() {
+                                    fx.params.insert(k.clone(), EffectParam::from_string(s));
                                 }
                             }
                         }
-                        clip.effects.retain(|e| e.effect_type != effect_type);
-                        clip.effects.push(fx);
+                        let fx_list = clip.effects.get_or_insert_with(Vec::new);
+                        fx_list.retain(|e| e.effect_type != effect_type);
+                        fx_list.push(fx);
                     }
                     return Ok(());
                 }
@@ -68,9 +73,10 @@ pub fn denoise_audio(args: &Value, state: &mut McpState) -> ToolResult {
             for clip in &mut track.clips {
                 if clip.id == clip_id {
                     let mut fx = Effect::new("audio.denoise");
-                    fx.params.insert("intensity".to_string(), EffectParam::Float(intensity));
-                    clip.effects.retain(|e| e.effect_type != "audio.denoise");
-                    clip.effects.push(fx);
+                    fx.params.insert("intensity".to_string(), EffectParam::from_value(intensity));
+                    let fx_list = clip.effects.get_or_insert_with(Vec::new);
+                    fx_list.retain(|e| e.effect_type != "audio.denoise");
+                    fx_list.push(fx);
                     return Ok(());
                 }
             }

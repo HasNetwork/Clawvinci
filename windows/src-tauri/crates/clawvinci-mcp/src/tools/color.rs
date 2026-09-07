@@ -23,13 +23,14 @@ pub fn apply_color(args: &Value, state: &mut McpState) -> ToolResult {
             for clip in &mut track.clips {
                 if clip.id == clip_id {
                     let mut color_fx = Effect::new("color.grade");
-                    color_fx.params.insert("exposure".to_string(), EffectParam::Float(exposure));
-                    color_fx.params.insert("contrast".to_string(), EffectParam::Float(contrast));
-                    color_fx.params.insert("saturation".to_string(), EffectParam::Float(saturation));
-                    color_fx.params.insert("temperature".to_string(), EffectParam::Float(temperature));
+                    color_fx.params.insert("exposure".to_string(), EffectParam::from_value(exposure));
+                    color_fx.params.insert("contrast".to_string(), EffectParam::from_value(contrast));
+                    color_fx.params.insert("saturation".to_string(), EffectParam::from_value(saturation));
+                    color_fx.params.insert("temperature".to_string(), EffectParam::from_value(temperature));
 
-                    clip.effects.retain(|e| e.effect_type != "color.grade");
-                    clip.effects.push(color_fx);
+                    let fx_list = clip.effects.get_or_insert_with(Vec::new);
+                    fx_list.retain(|e| e.effect_type != "color.grade");
+                    fx_list.push(color_fx);
                     return Ok(());
                 }
             }
@@ -58,7 +59,10 @@ pub fn inspect_color(args: &Value, state: &mut McpState) -> ToolResult {
     for track in &timeline.tracks {
         for clip in &track.clips {
             if clip.id == clip_id {
-                let color_fx = clip.effects.iter().find(|e| e.effect_type == "color.grade");
+                let color_fx = clip
+                    .effects
+                    .as_ref()
+                    .and_then(|fxs| fxs.iter().find(|e| e.effect_type == "color.grade"));
                 return ToolResult::json(&json!({
                     "clipId": clip_id,
                     "hasGrade": color_fx.is_some(),

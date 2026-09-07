@@ -50,7 +50,7 @@ pub fn manage_project(args: &Value, state: &mut McpState) -> ToolResult {
             state.active_project_name = name.to_string();
             if let Some(fps) = args.get("fps").and_then(|v| v.as_i64()) {
                 let _ = state.editor.perform("Change Project FPS", |tl| {
-                    tl.timecode_base = fps as u32;
+                    tl.fps = fps as i32;
                     Ok(())
                 });
             }
@@ -77,7 +77,7 @@ pub fn create_timeline(args: &Value, state: &mut McpState) -> ToolResult {
         cloned.name = name.clone();
         cloned
     } else {
-        let mut empty = Timeline::new();
+        let mut empty = Timeline::default();
         empty.id = Uuid::new_v4().to_string();
         empty.name = name.clone();
         empty

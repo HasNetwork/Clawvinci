@@ -21,7 +21,7 @@ pub fn add_texts(args: &Value, state: &mut McpState) -> ToolResult {
     let res = state.editor.perform("Add Texts", |tl| {
         if track_idx >= tl.tracks.len() {
             return Err(clawvinci_timeline::error::TimelineError::TrackNotFound(
-                track_idx.to_string(),
+                track_idx,
             ));
         }
 
@@ -58,8 +58,9 @@ pub fn add_texts(args: &Value, state: &mut McpState) -> ToolResult {
             let clip_id = Uuid::new_v4().to_string();
             added_ids.push(clip_id.clone());
 
-            let mut clip = Clip::new(clip_id, "text://title".to_string(), start, duration);
-            clip.text = Some(text_content);
+            let mut clip = Clip::new("text://title".to_string(), start, duration);
+            clip.id = clip_id;
+            clip.text_content = Some(text_content);
             clip.text_style = Some(style);
             tl.tracks[track_idx].clips.push(clip);
         }
@@ -94,7 +95,7 @@ pub fn update_text(args: &Value, state: &mut McpState) -> ToolResult {
             for clip in &mut track.clips {
                 if clip.id == clip_id {
                     if let Some(t) = text_content {
-                        clip.text = Some(t.to_string());
+                        clip.text_content = Some(t.to_string());
                     }
                     if font_name.is_some() || font_size.is_some() || color_hex.is_some() {
                         let mut style = clip.text_style.clone().unwrap_or_default();

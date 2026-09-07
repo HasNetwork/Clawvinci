@@ -96,7 +96,7 @@ fn test_tool_execution_clips_and_undo_cycle() {
     );
     assert!(!prop_res.is_error);
     assert_eq!(state.editor.timeline().tracks[0].clips[0].opacity, 0.8);
-    assert_eq!(state.editor.timeline().tracks[0].clips[0].volume_db, -6.0);
+    assert_eq!(state.editor.timeline().tracks[0].clips[0].volume, -6.0);
 }
 
 #[test]
@@ -155,7 +155,7 @@ fn test_tool_execution_markers_and_texts() {
     assert!(!text_res.is_error);
     assert_eq!(state.editor.timeline().tracks[0].clips.len(), 1);
     assert_eq!(
-        state.editor.timeline().tracks[0].clips[0].text.as_deref(),
+        state.editor.timeline().tracks[0].clips[0].text_content.as_deref(),
         Some("Opening Title")
     );
 }
@@ -190,8 +190,9 @@ fn test_tool_execution_color_and_effects() {
     assert!(!color_res.is_error);
     assert!(state.editor.timeline().tracks[0].clips[0]
         .effects
-        .iter()
-        .any(|e| e.effect_type == "color.grade"));
+        .as_ref()
+        .map(|fxs| fxs.iter().any(|e| e.effect_type == "color.grade"))
+        .unwrap_or(false));
 
     // Apply effect
     let fx_res = executor.execute(
@@ -206,6 +207,7 @@ fn test_tool_execution_color_and_effects() {
     assert!(!fx_res.is_error);
     assert!(state.editor.timeline().tracks[0].clips[0]
         .effects
-        .iter()
-        .any(|e| e.effect_type == "gaussian_blur"));
+        .as_ref()
+        .map(|fxs| fxs.iter().any(|e| e.effect_type == "gaussian_blur"))
+        .unwrap_or(false));
 }

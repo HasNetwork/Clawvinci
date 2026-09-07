@@ -52,7 +52,7 @@ pub fn get_timeline(args: &Value, state: &mut McpState) -> ToolResult {
                 "endFrame": end,
                 "speed": clip.speed,
                 "opacity": clip.opacity,
-                "volumeDb": clip.volume_db,
+                "volumeDb": clip.volume,
                 "blendMode": format!("{:?}", clip.blend_mode).to_lowercase()
             }));
         }

@@ -185,7 +185,7 @@ pub fn add_clips(args: &Value, state: &mut McpState) -> ToolResult {
     let res = state.editor.perform("Add Clips", |tl| {
         if track_idx >= tl.tracks.len() {
             return Err(clawvinci_timeline::error::TimelineError::TrackNotFound(
-                track_idx.to_string(),
+                track_idx,
             ));
         }
 
@@ -206,8 +206,9 @@ pub fn add_clips(args: &Value, state: &mut McpState) -> ToolResult {
             let clip_id = Uuid::new_v4().to_string();
             added_ids.push(clip_id.clone());
 
-            let mut clip = Clip::new(clip_id, media_ref, start, duration);
-            clip.in_point = in_point;
+            let mut clip = Clip::new(media_ref, start, duration);
+            clip.id = clip_id;
+            clip.trim_start_frame = in_point;
             tl.tracks[track_idx].clips.push(clip);
         }
         Ok(())
@@ -239,7 +240,8 @@ pub fn insert_clips(args: &Value, state: &mut McpState) -> ToolResult {
         .max(1);
 
     let clip_id = Uuid::new_v4().to_string();
-    let clip = Clip::new(clip_id.clone(), media_ref, at_frame, duration);
+    let mut clip = Clip::new(media_ref, at_frame, duration);
+    clip.id = clip_id.clone();
 
     match state.editor.ripple_insert(track_idx, clip) {
         Ok(()) => {
@@ -418,7 +420,7 @@ pub fn set_clip_properties(args: &Value, state: &mut McpState) -> ToolResult {
             for clip in &mut track.clips {
                 if clip.id == clip_id {
                     if let Some(v) = volume_db {
-                        clip.volume_db = v;
+                        clip.volume = v;
                     }
                     if let Some(o) = opacity {
                         clip.opacity = o.clamp(0.0, 1.0);
@@ -427,12 +429,12 @@ pub fn set_clip_properties(args: &Value, state: &mut McpState) -> ToolResult {
                         clip.speed = s.max(0.1);
                     }
                     if let Some(bm) = blend_mode {
-                        clip.blend_mode = match bm.to_lowercase().as_str() {
+                        clip.blend_mode = Some(match bm.to_lowercase().as_str() {
                             "multiply" => BlendMode::Multiply,
                             "screen" => BlendMode::Screen,
                             "overlay" => BlendMode::Overlay,
                             _ => BlendMode::Normal,
-                        };
+                        });
                     }
                     return Ok(());
                 }
@@ -486,7 +488,7 @@ pub fn copy_clip_settings(args: &Value, state: &mut McpState) -> ToolResult {
             for clip in &mut track.clips {
                 if target_ids.contains(&clip.id.as_str()) {
                     clip.opacity = src.opacity;
-                    clip.volume_db = src.volume_db;
+                    clip.volume = src.volume;
                     clip.blend_mode = src.blend_mode;
                     clip.effects = src.effects.clone();
                     copied += 1;
