@@ -2,10 +2,30 @@
 // SPDX-License-Identifier: GPL-3.0-only
 //! Clawvinci Generative AI Engine (Phase 11): Provider clients, submissions, and catalog.
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_gen_scaffold() {
-        assert!(true);
-    }
-}
+pub mod backend;
+pub mod catalog;
+pub mod edit;
+pub mod error;
+pub mod preprocessing;
+pub mod service;
+pub mod submission;
+
+pub use backend::{
+    BackendGenerationJob, BackendGenerationParams, BackendGenerationStatus,
+    GenerationBackendClient, HttpGenerationBackend, MockGenerationBackend,
+};
+pub use catalog::{
+    AudioCaps, AudioPricing, CostEstimator, ImageCaps, ModelCapabilities, ModelCatalog,
+    ModelCatalogEntry, ModelModality, ModelPreferences, ModelPricing, UpscaleCaps, VideoCaps,
+};
+pub use edit::{EditActionAvailability, EditActionKind};
+pub use error::{GenError, GenResult};
+pub use preprocessing::{
+    AudioTrackExtractor, ImageConverter, TrimmedSource, VideoTrimExtractor,
+};
+pub use service::GenerationService;
+pub use submission::{
+    AudioGenerationParams, AudioGenerationSubmission, BackendGenerationParams as SubmissionParams,
+    ImageGenerationParams, ImageGenerationSubmission, MusicGenerationSubmission, MusicMode,
+    UpscaleGenerationParams, VideoGenerationParams, VideoGenerationSubmission,
+};

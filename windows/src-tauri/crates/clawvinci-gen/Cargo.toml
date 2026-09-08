@@ -7,8 +7,17 @@ description = "Phase 11: Generative AI provider catalog, submission, and edit cl
 
 [dependencies]
 clawvinci-model = { path = "../clawvinci-model" }
+clawvinci-media = { path = "../clawvinci-media" }
+clawvinci-timeline = { path = "../clawvinci-timeline" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
+tokio-util.workspace = true
 tracing.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+reqwest = { version = "0.12", features = ["json", "stream"] }
+
+[dev-dependencies]
+tempfile = "3"
