@@ -45,6 +45,18 @@ more standard). Run via `onnxruntime` + DirectML on Windows, same as
 Phase 9's beat model — share the ONNX Runtime integration work between
 the two phases rather than building it twice.
 
+## Revision (post-shipment): transcription backend needs rework
+
+**Phase 10 is implemented and CI-green, but its transcription backend
+(`clawvinci-search::transcription::backend.rs`) hardcodes
+`https://api.palmier.io`** — a Palmier-operated endpoint Clawvinci has no
+right to call. This predates `PLAN.md` Decision 10 (no accounts/backend/
+telemetry — everything BYOK or local). The fix (BYOK config + a new local
+on-device Whisper-class path) is scoped into
+`PLAN/12-0-auth-backend-telemetry-updater.md` section 1, not redone here —
+this note exists so anyone reading this phase doc in isolation knows it's
+not the current state of that one file.
+
 ## Definition of done for Phase 10
 
 - `clawvinci-search` crate compiles against `clawvinci-media` (Phase 2)

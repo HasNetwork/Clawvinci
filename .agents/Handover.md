@@ -5,7 +5,9 @@
 > **Current Git Branch**: `worktree-plan-windows-port`  
 > **Last Clean Commit**: `fb7402c`  
 > **CI Verification Status**: ✅ **100% Green** on GitHub Actions Run `34208682487` (Check, Clippy, Test, Tauri Build & Artifact Upload)  
-> **Active Target Milestone**: **Phase 12.0 — Auth, Backend, Telemetry & Auto-Updater**
+> **Active Target Milestone**: **Phase 12.0 — BYOK/local cleanup + Auto-Updater** (rewritten — see `.agents/PLAN.md` Decision 10: no auth, no Palmier backend, no telemetry)
+
+> ⚠️ **Read `.agents/PLAN/12-0-auth-backend-telemetry-updater.md` before starting.** It was rewritten after Phase 11 shipped. Clawvinci has no accounts/backend/telemetry — Phase 10's `clawvinci-search::transcription::backend.rs` currently calls `https://api.palmier.io`, which must be replaced with BYOK + a local on-device path as this phase's first task.
 
 ---
 
@@ -76,7 +78,7 @@ All incoming agents working on this codebase **must strictly abide by these rule
 | **9.0** | `clawvinci-audio` | Audio analysis engine: Envelopes, real-time metering, cross-correlation sync, silence/dead-air planner, beat/tempo detector, VAD. | ✅ CI Green (`9-0-audio-analysis.md`, Run `34192487829`) |
 | **10.0** | `clawvinci-search` | Semantic visual search (SigLIP2 / `PALMEMB1` binary embeddings), transcript search, word cut planner. | ✅ CI Green (`10-0-search-transcription.md`, Run `34195654610`) |
 | **11.0** | `clawvinci-gen` | Generative AI provider catalog, submissions, edit clients, preprocessing, timeline insertion, and MCP tools. | ✅ CI Green (`11-0-generative-ai.md`, Run `34208682487`) |
-| **12.0** | `clawvinci` (Tauri) | **ACTIVE HANDOVER TARGET**: Auth (Clerk), backend telemetry (PostHog/Sentry), auto-updater. | 🚀 **Ready for Implementation** (`12-0-auth-backend-telemetry-updater.md`) |
+| **12.0** | `clawvinci-search` (fix), `clawvinci-gen` (verify), `clawvinci` (Tauri) | **ACTIVE HANDOVER TARGET — REVISED (Decision 10)**: no auth/backend/telemetry. Fix Phase 10's transcription backend (hardcoded `api.palmier.io` → BYOK + local on-device), verify Phase 11's generation backend is BYOK-direct-to-provider, add Tauri auto-updater. | 🚀 **Ready for Implementation** (`12-0-auth-backend-telemetry-updater.md`, rewritten) |
 | **13.0** | Entire app | Production polish, performance profiling, final documentation. | 📋 Planned (`13-0-polish.md`) |
 
 ---

@@ -40,6 +40,7 @@ New Windows-port code lives in a new top-level layout defined in
 | 7 | GPU backend | **DX12 primary via wgpu, Vulkan fallback.** No DX12-only assumption in `clawvinci-render`/Phase 4-5 code — wgpu's backend selection must actually try Vulkan when DX12 init fails, not just compile-support it. |
 | 8 | CI | **GitHub Actions `windows-latest` runners by default.** Self-hosted is fine, and preferred, for any phase that needs extra native libraries (FFmpeg build deps, GPU drivers for wgpu/D3D12 integration tests) that a hosted runner can't provide cheaply — decide per-phase when that need is concrete, not speculatively now. |
 | 9 | Project file format | **Original `.palmier` format, byte-compatible.** Same `project.json` shape (including the legacy bare-`Timeline` decode fallback) and package layout as the macOS app, so projects move between platforms. This is Phase 1's format decision — see `PLAN/1-0-domain-model.md`, now resolved to option 1 there. |
+| 10 | Auth/backend/telemetry | **None — cut entirely.** Clawvinci is not a hosted service: no Clerk auth, no Palmier/Convex account or credit backend, no Sentry/PostHog telemetry. Every AI capability is BYOK (user's own key, direct to the provider) or local/on-device. Added after Phase 11 shipped — see `PLAN/12-0-auth-backend-telemetry-updater.md` for the rework this requires in already-built code. |
 
 ## Architecture scan findings (informs every phase below)
 
@@ -102,7 +103,7 @@ grounded in.
 | 9 | Audio analysis: beat detection (ONNX), sync, silence removal, metering; VAD/speaker-ID/enhancement flagged open | [`PLAN/9-0-audio-analysis.md`](PLAN/9-0-audio-analysis.md) |
 | 10 | Search & transcription: SigLIP2 visual search (ONNX), transcript search — transcription itself is a cloud API client | [`PLAN/10-0-search-transcription-ml.md`](PLAN/10-0-search-transcription-ml.md) |
 | 11 | Generative AI integration: provider catalog/submission/edit clients, preprocessing | [`PLAN/11-0-generative-ai.md`](PLAN/11-0-generative-ai.md) |
-| 12 | Auth/backend/telemetry/updater: Clerk auth (needs a scoping decision), Convex client, Sentry/PostHog, Tauri updater | [`PLAN/12-0-auth-backend-telemetry-updater.md`](PLAN/12-0-auth-backend-telemetry-updater.md) |
+| 12 | **Revised (Decision 10):** no auth/backend/telemetry — BYOK/local cleanup (fix Phase 10's transcription backend, verify Phase 11's generation backend) + Tauri updater | [`PLAN/12-0-auth-backend-telemetry-updater.md`](PLAN/12-0-auth-backend-telemetry-updater.md) |
 | 13 | Polish: localization, settings panes, home/onboarding, in-app help | [`PLAN/13-0-polish.md`](PLAN/13-0-polish.md) |
 
 Phases 2–4 are the critical path (nothing plays back or exports without
@@ -125,3 +126,25 @@ phases.
 
 All open questions from the original scan (branding, OS floor, GPU backend,
 CI) are resolved — see decisions 5–8 above. Nothing is blocking Phase 0.
+
+## Revision after Phase 11 shipped: Decision 10 (no accounts/backend/telemetry)
+
+Implementation had already reached Phase 11 (all of Phases 0–11 complete
+and CI-green) before Decision 10 was made. Two already-shipped pieces
+assumed a Palmier-operated backend and need rework, not just a forward
+scope change:
+
+- **Phase 10** (`clawvinci-search::transcription::backend`) hardcodes
+  `https://api.palmier.io` as its transcription endpoint — a real defect
+  against Decision 10. Fix is scoped into Phase 12 (see its doc, section 1),
+  since it needs BYOK + a new local on-device path, not a one-line change.
+- **Phase 11** (`clawvinci-gen::backend::client::GenerationBackendClient`)
+  is trait-based and doesn't hardcode a Palmier URL, but needs verifying
+  (or reworking) that its concrete implementation calls each generation
+  provider directly with a per-provider BYOK key, not through a shared
+  middleman backend. Also scoped into Phase 12 (section 2).
+
+Both fixes are Phase 12's job precisely because that's where the
+auth/backend phase always lived in the plan — it's now a cleanup-and-updater
+phase instead of an accounts phase. See `PLAN/12-0-auth-backend-telemetry-updater.md`
+for the full rewrite.

@@ -33,6 +33,13 @@ separately). Project-specific rules only — explanations of *why* live in
 - Ship under the "Clawvinci" name (Decision 5, `PLAN.md`). Never use
   "Palmier Pro" branding/name/logo anywhere user-facing — it's proprietary
   to Palmier, Inc. even though this source is GPLv3.
+- **No accounts, no Palmier-operated backend, no telemetry** (Decision 10,
+  `PLAN.md`). Never add Clerk/auth code, never call `api.palmier.io` or any
+  other Palmier/Convex-hosted endpoint, never add Sentry/PostHog or any
+  other phone-home telemetry. Every AI capability is BYOK (user's own key,
+  direct to the provider) or fully local/on-device — no proxy backend in
+  between. If you find code that violates this (e.g. a hardcoded Palmier
+  URL from before Decision 10), fix it, don't extend it.
 
 ## Translating from the Swift reference
 
