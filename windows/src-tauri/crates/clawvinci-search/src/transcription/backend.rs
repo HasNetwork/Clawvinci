@@ -29,23 +29,14 @@ pub struct BackendTranscriptionJob {
     pub error_message: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TranscriptionBackendConfig {
     pub endpoint: Option<String>,
     pub api_key: Option<String>,
     pub model: Option<String>,
 }
 
-impl Default for TranscriptionBackendConfig {
-    fn default() -> Self {
-        Self {
-            endpoint: None,
-            api_key: None,
-            model: None,
-        }
-    }
-}
-
+#[derive(Clone)]
 pub struct TranscriptionBackend {
     config: TranscriptionBackendConfig,
     client: reqwest::Client,
@@ -67,7 +58,7 @@ impl TranscriptionBackend {
         self.config
             .endpoint
             .as_deref()
-            .map_or(false, |s| !s.trim().is_empty())
+            .is_some_and(|s| !s.trim().is_empty())
     }
 
     /// Transcribes raw audio bytes against an OpenAI-compatible Whisper REST API (`/v1/audio/transcriptions`).

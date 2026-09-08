@@ -109,7 +109,7 @@ impl ByokGenerationBackend {
         guard
             .get(&provider.to_lowercase())
             .and_then(|c| c.api_key.as_ref())
-            .map_or(false, |k| !k.trim().is_empty())
+            .is_some_and(|k| !k.trim().is_empty())
     }
 
     /// Infers the upstream AI provider from the requested model ID.

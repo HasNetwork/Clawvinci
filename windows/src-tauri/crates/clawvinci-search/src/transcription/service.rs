@@ -11,18 +11,13 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::{Arc, RwLock};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "mode", content = "config")]
 pub enum TranscriptionEngineMode {
     Byok(TranscriptionBackendConfig),
     Local,
+    #[default]
     Auto,
-}
-
-impl Default for TranscriptionEngineMode {
-    fn default() -> Self {
-        Self::Auto
-    }
 }
 
 pub struct TranscriptionService {
@@ -87,10 +82,8 @@ impl TranscriptionService {
                 let is_configured = { self.backend.read().unwrap().is_configured() };
                 if is_configured {
                     let wav_bytes = encode_pcm_to_wav(samples, sample_rate as u32);
-                    let res = {
-                        let backend = self.backend.read().unwrap();
-                        backend.transcribe_audio(wav_bytes, "audio.wav", None).await
-                    };
+                    let backend = { self.backend.read().unwrap().clone() };
+                    let res = backend.transcribe_audio(wav_bytes, "audio.wav", None).await;
                     if let Ok(res) = res {
                         return Ok(res);
                     }
@@ -136,10 +129,8 @@ impl TranscriptionService {
                         .file_name()
                         .and_then(|f| f.to_str())
                         .unwrap_or("audio.wav");
-                    let res = {
-                        let backend = self.backend.read().unwrap();
-                        backend.transcribe_audio(bytes, filename, None).await
-                    };
+                    let backend = { self.backend.read().unwrap().clone() };
+                    let res = backend.transcribe_audio(bytes, filename, None).await;
                     if let Ok(res) = res {
                         res
                     } else {
@@ -165,8 +156,8 @@ async fn read_file_samples_fallback(path: &Path) -> SearchResult<Vec<f32>> {
     if bytes.len() > 44 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WAVE" {
         // Simple 16-bit PCM WAV parser
         let mut samples = Vec::with_capacity((bytes.len() - 44) / 2);
-        for chunk in bytes[44..].chunks_exact(2) {
-            let val = i16::from_le_bytes([chunk[0], chunk[1]]);
+        for &chunk in bytes[44..].as_chunks::<2>().0 {
+            let val = i16::from_le_bytes(chunk);
             samples.push(val as f32 / 32768.0);
         }
         return Ok(samples);
