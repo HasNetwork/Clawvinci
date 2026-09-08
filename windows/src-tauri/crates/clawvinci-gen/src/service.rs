@@ -3,8 +3,10 @@
 // Derived from Sources/PalmierPro/Generation/GenerationService.swift (GPLv3).
 
 use crate::backend::client::GenerationBackendClient;
-use crate::backend::types::{BackendGenerationJob, BackendGenerationParams, BackendGenerationStatus};
+use crate::backend::types::{BackendGenerationJob, BackendGenerationStatus};
 use crate::error::{GenError, GenResult};
+use crate::submission::types::BackendGenerationParams;
+use clawvinci_media::ffmpeg::FfmpegContext;
 use clawvinci_media::probe::probe_media;
 use clawvinci_model::clip_type::ClipType;
 use clawvinci_model::media_manifest::{
@@ -118,14 +120,16 @@ impl<B: GenerationBackendClient> GenerationService<B> {
                             .await?;
 
                         // Probe resulting media file for duration and resolution
-                        if let Ok(probe) = probe_media(dest_path).await {
-                            manifest_entry.duration = probe.duration_seconds;
-                            if let Some(v) = probe.video_stream() {
-                                manifest_entry.source_width = Some(v.width as i32);
-                                manifest_entry.source_height = Some(v.height as i32);
-                                manifest_entry.source_fps = Some(v.fps);
+                        if let Ok(ctx) = FfmpegContext::discover().await {
+                            if let Ok(probe) = probe_media(&ctx, dest_path).await {
+                                manifest_entry.duration = probe.duration_seconds;
+                                if let Some(v) = probe.primary_video() {
+                                    manifest_entry.source_width = Some(v.width as i32);
+                                    manifest_entry.source_height = Some(v.height as i32);
+                                    manifest_entry.source_fps = Some(v.fps);
+                                }
+                                manifest_entry.has_audio = Some(!probe.audio_streams.is_empty());
                             }
-                            manifest_entry.has_audio = Some(probe.has_audio());
                         }
 
                         if let Some(ref mut input) = manifest_entry.generation_input {
@@ -164,7 +168,6 @@ impl<B: GenerationBackendClient> GenerationService<B> {
         timeline: &mut Timeline,
         track_index: usize,
         asset_id: &str,
-        name: &str,
         start_frame: i64,
         duration_frames: i64,
     ) -> Result<String, GenError> {
@@ -174,17 +177,10 @@ impl<B: GenerationBackendClient> GenerationService<B> {
             )));
         }
 
-        let clip = Clip::new(
-            asset_id,
-            name,
-            start_frame,
-            duration_frames,
-            0,
-            duration_frames,
-        );
+        let clip = Clip::new(asset_id, start_frame, duration_frames);
         let clip_id = clip.id.clone();
         timeline.tracks[track_index].clips.push(clip);
-        timeline.recalculate_duration();
         Ok(clip_id)
     }
 }
+

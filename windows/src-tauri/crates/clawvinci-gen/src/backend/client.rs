@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Derived from Sources/PalmierPro/Generation/GenerationBackend.swift (GPLv3).
 
-use super::types::{BackendGenerationJob, BackendGenerationParams, BackendGenerationStatus};
+use super::types::{BackendGenerationJob, BackendGenerationStatus};
 use crate::error::{GenError, GenResult};
+use crate::submission::types::BackendGenerationParams;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use std::collections::HashMap;
 use std::path::Path;

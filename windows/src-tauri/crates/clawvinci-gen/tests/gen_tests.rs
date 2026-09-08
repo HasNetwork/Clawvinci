@@ -305,12 +305,12 @@ async fn test_service_lifecycle_and_timeline() {
     assert!(dest_path.exists());
 
     // Timeline clip placement
-    let mut timeline = Timeline::new("Test Timeline", 30.0);
+    let mut timeline = Timeline::new(30, 1920, 1080);
+    timeline.tracks.push(clawvinci_model::timeline::Track::new(ClipType::Video));
     let clip_id = GenerationService::<MockGenerationBackend>::place_clip_on_timeline(
         &mut timeline,
         0,
         &placeholder.id,
-        &placeholder.name,
         0,
         150,
     )
