@@ -11,8 +11,8 @@ pub mod service;
 pub mod submission;
 
 pub use backend::{
-    BackendGenerationJob, BackendGenerationParams, BackendGenerationStatus,
-    GenerationBackendClient, HttpGenerationBackend, MockGenerationBackend,
+    BackendGenerationJob, BackendGenerationStatus, GenerationBackendClient,
+    HttpGenerationBackend, MockGenerationBackend,
 };
 pub use catalog::{
     AudioCaps, AudioPricing, CostEstimator, ImageCaps, ModelCapabilities, ModelCatalog,
@@ -25,7 +25,7 @@ pub use preprocessing::{
 };
 pub use service::GenerationService;
 pub use submission::{
-    AudioGenerationParams, AudioGenerationSubmission, BackendGenerationParams as SubmissionParams,
+    AudioGenerationParams, AudioGenerationSubmission, BackendGenerationParams,
     ImageGenerationParams, ImageGenerationSubmission, MusicGenerationSubmission, MusicMode,
     UpscaleGenerationParams, VideoGenerationParams, VideoGenerationSubmission,
 };
