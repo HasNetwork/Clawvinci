@@ -94,24 +94,20 @@ fn test_audio_meter_decay_and_clipping() {
 
 #[test]
 fn test_audio_sync_cross_correlation() {
-    // Generate deterministic reference pattern (400 hops)
+    // Generate deterministic non-periodic chirp pattern (400 hops)
     let n = 400;
-    let mut reference = vec![0.1f32; n];
-    // Add distinct pulses
-    for i in (50..n).step_by(60) {
-        reference[i] = 0.9;
-        reference[i + 1] = 0.8;
-        reference[i + 2] = 0.7;
+    let mut reference = vec![0.0f32; n];
+    for i in 0..n {
+        let t = i as f32 / n as f32;
+        reference[i] = 0.5 + 0.4 * (2.0 * PI * (5.0 + 25.0 * t) * t).sin();
     }
 
-    // Target is reference delayed by +40 hops
+    // Target is slice of reference delayed by +40 hops
     let lag = 40i64;
-    let mut target = vec![0.1f32; 200];
-    for i in 0..200 {
-        let ref_idx = (i as i64 + lag) as usize;
-        if ref_idx < reference.len() {
-            target[i] = reference[ref_idx];
-        }
+    let target_len = 150;
+    let mut target = vec![0.0f32; target_len];
+    for i in 0..target_len {
+        target[i] = reference[i + lag as usize];
     }
 
     let result = AudioSyncCorrelator::correlate(&reference, &target, 100, 0, 16);

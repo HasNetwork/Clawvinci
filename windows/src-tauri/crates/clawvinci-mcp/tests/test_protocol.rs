@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use clawvinci_mcp::protocol::{
-    all_tool_definitions, error_codes, JsonRpcError, JsonRpcRequest, JsonRpcResponse,
+    all_tool_definitions, error_codes, JsonRpcRequest, JsonRpcResponse,
 };
 use serde_json::json;
 use std::collections::HashSet;

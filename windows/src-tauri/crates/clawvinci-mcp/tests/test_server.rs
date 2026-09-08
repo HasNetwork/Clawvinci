@@ -8,7 +8,6 @@ use clawvinci_mcp::state::McpState;
 use clawvinci_model::clip_type::ClipType;
 use clawvinci_model::timeline::{Timeline, Track};
 use serde_json::json;
-use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
