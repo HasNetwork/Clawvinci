@@ -3,7 +3,7 @@
 
 use clawvinci_gen::backend::{ByokGenerationBackend, ByokProviderConfig, GenerationBackendClient};
 use clawvinci_gen::error::GenError;
-use clawvinci_gen::submission::BackendGenerationParams;
+use clawvinci_gen::submission::{BackendGenerationParams, VideoGenerationParams};
 
 #[test]
 fn test_byok_provider_config_and_inference() {
@@ -40,19 +40,20 @@ fn test_byok_backend_missing_key_error() {
         .unwrap();
 
     rt.block_on(async {
-        let params = BackendGenerationParams::Video {
+        let params = BackendGenerationParams::Video(VideoGenerationParams {
             prompt: "Sunset on beach".to_string(),
-            duration_seconds: 5,
+            duration: 5,
             aspect_ratio: "16:9".to_string(),
-            resolution: "720p".to_string(),
+            resolution: Some("720p".to_string()),
+            source_video_url: None,
+            start_frame_url: None,
+            end_frame_url: None,
             reference_image_urls: vec![],
             reference_video_urls: vec![],
             reference_audio_urls: vec![],
-            first_frame_url: None,
-            last_frame_url: None,
-            source_video_url: None,
-            seed: None,
-        };
+            generate_audio: true,
+            draft: None,
+        });
 
         // Submitting for seedance without key must fail with actionable error
         let err = backend
