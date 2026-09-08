@@ -6,9 +6,10 @@ use super::types::{BackendGenerationJob, BackendGenerationStatus};
 use crate::error::{GenError, GenResult};
 use crate::submission::types::BackendGenerationParams;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
@@ -40,7 +41,294 @@ pub trait GenerationBackendClient: Send + Sync {
     ) -> impl std::future::Future<Output = GenResult<()>> + Send;
 }
 
-/// HTTP REST backend client implementation for remote generative services.
+/// User BYOK configuration for an external AI provider.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ByokProviderConfig {
+    pub provider: String,
+    pub api_key: Option<String>,
+    pub endpoint: Option<String>,
+}
+
+impl ByokProviderConfig {
+    pub fn new(provider: impl Into<String>, api_key: Option<String>, endpoint: Option<String>) -> Self {
+        Self {
+            provider: provider.into(),
+            api_key,
+            endpoint,
+        }
+    }
+}
+
+/// Provider-direct BYOK generation backend routing requests straight to external AI providers.
+#[derive(Clone)]
+pub struct ByokGenerationBackend {
+    providers: Arc<RwLock<HashMap<String, ByokProviderConfig>>>,
+    client: reqwest::Client,
+}
+
+impl Default for ByokGenerationBackend {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ByokGenerationBackend {
+    pub fn new() -> Self {
+        Self {
+            providers: Arc::new(RwLock::new(HashMap::new())),
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(60))
+                .build()
+                .unwrap_or_default(),
+        }
+    }
+
+    pub fn with_providers(configs: Vec<ByokProviderConfig>) -> Self {
+        let backend = Self::new();
+        {
+            let mut guard = backend.providers.write().unwrap();
+            for cfg in configs {
+                guard.insert(cfg.provider.to_lowercase(), cfg);
+            }
+        }
+        backend
+    }
+
+    pub fn set_provider_config(&self, config: ByokProviderConfig) {
+        let mut guard = self.providers.write().unwrap();
+        guard.insert(config.provider.to_lowercase(), config);
+    }
+
+    pub fn get_provider_config(&self, provider: &str) -> Option<ByokProviderConfig> {
+        let guard = self.providers.read().unwrap();
+        guard.get(&provider.to_lowercase()).cloned()
+    }
+
+    pub fn is_provider_configured(&self, provider: &str) -> bool {
+        let guard = self.providers.read().unwrap();
+        guard
+            .get(&provider.to_lowercase())
+            .and_then(|c| c.api_key.as_ref())
+            .map_or(false, |k| !k.trim().is_empty())
+    }
+
+    /// Infers the upstream AI provider from the requested model ID.
+    pub fn infer_provider(model: &str) -> &'static str {
+        let m = model.to_lowercase();
+        if m.starts_with("kling") {
+            "kling"
+        } else if m.starts_with("seedance") {
+            "seedance"
+        } else if m.starts_with("elevenlabs") {
+            "elevenlabs"
+        } else if m.starts_with("suno") {
+            "suno"
+        } else if m.starts_with("nano-banana") || m.starts_with("flux") {
+            "fal"
+        } else if m.starts_with("whisper") || m.starts_with("dall-e") || m.starts_with("sora") {
+            "openai"
+        } else {
+            "custom"
+        }
+    }
+
+    /// Standard default REST endpoint for recognized AI providers.
+    pub fn default_endpoint_for_provider(provider: &str) -> &'static str {
+        match provider.to_lowercase().as_str() {
+            "kling" => "https://api.klingai.com/v1",
+            "seedance" => "https://api.seedance.ai/v1",
+            "elevenlabs" => "https://api.elevenlabs.io/v1",
+            "suno" => "https://api.suno.ai/v1",
+            "fal" => "https://queue.fal.run",
+            "openai" => "https://api.openai.com/v1",
+            _ => "https://api.openai.com/v1",
+        }
+    }
+}
+
+impl GenerationBackendClient for ByokGenerationBackend {
+    async fn submit(
+        &self,
+        model: &str,
+        params: &BackendGenerationParams,
+        project_id: Option<&str>,
+    ) -> GenResult<String> {
+        let provider = Self::infer_provider(model);
+        let (api_key, base_url) = {
+            let guard = self.providers.read().unwrap();
+            match guard.get(provider) {
+                Some(cfg) => {
+                    let key = match &cfg.api_key {
+                        Some(k) if !k.trim().is_empty() => k.clone(),
+                        _ => {
+                            return Err(GenError::Backend(format!(
+                                "Missing BYOK API key for provider '{provider}'. Please configure your provider key in settings."
+                            )))
+                        }
+                    };
+                    let endpoint = cfg
+                        .endpoint
+                        .clone()
+                        .unwrap_or_else(|| Self::default_endpoint_for_provider(provider).to_string());
+                    (key, endpoint)
+                }
+                None => {
+                    return Err(GenError::Backend(format!(
+                        "No BYOK configuration found for provider '{provider}'. Please configure your provider API key in settings."
+                    )))
+                }
+            }
+        };
+
+        let url = format!("{}/generations/submit", base_url.trim_end_matches('/'));
+        let payload = serde_json::json!({
+            "model": model,
+            "params": params,
+            "projectId": project_id,
+        });
+
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        if let Ok(val) = HeaderValue::from_str(&format!("Bearer {api_key}")) {
+            headers.insert(AUTHORIZATION, val);
+        }
+
+        let response = self
+            .client
+            .post(&url)
+            .headers(headers)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| GenError::Network(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let text = response.text().await.unwrap_or_default();
+            return Err(GenError::Backend(format!(
+                "Provider '{provider}' submission returned {status}: {text}"
+            )));
+        }
+
+        let body: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| GenError::Network(format!("Failed to parse response: {e}")))?;
+
+        body.get("jobId")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .ok_or_else(|| GenError::Backend("Response missing 'jobId'".to_string()))
+    }
+
+    async fn get_job(&self, job_id: &str) -> GenResult<BackendGenerationJob> {
+        // Look up default endpoint
+        let endpoint = Self::default_endpoint_for_provider("openai");
+        let url = format!("{}/generations/{job_id}", endpoint.trim_end_matches('/'));
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| GenError::Network(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let text = response.text().await.unwrap_or_default();
+            return Err(GenError::Backend(format!(
+                "Failed to get job status {status}: {text}"
+            )));
+        }
+
+        response
+            .json::<BackendGenerationJob>()
+            .await
+            .map_err(|e| GenError::Network(format!("Failed to parse job JSON: {e}")))
+    }
+
+    async fn upload_reference(&self, file_path: &Path, content_type: &str) -> GenResult<String> {
+        let file_bytes = tokio::fs::read(file_path).await?;
+        let endpoint = Self::default_endpoint_for_provider("openai");
+        let url = format!("{}/uploads/reference", endpoint.trim_end_matches('/'));
+
+        let mut headers = HeaderMap::new();
+        if let Ok(ct) = HeaderValue::from_str(content_type) {
+            headers.insert(CONTENT_TYPE, ct);
+        }
+
+        let response = self
+            .client
+            .post(&url)
+            .headers(headers)
+            .body(file_bytes)
+            .send()
+            .await
+            .map_err(|e| GenError::Network(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let text = response.text().await.unwrap_or_default();
+            return Err(GenError::Backend(format!(
+                "Failed to upload reference {status}: {text}"
+            )));
+        }
+
+        let body: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| GenError::Network(format!("Failed to parse upload response: {e}")))?;
+
+        body.get("url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .ok_or_else(|| GenError::Backend("Upload response missing 'url'".to_string()))
+    }
+
+    async fn download_file(
+        &self,
+        url: &str,
+        dest_path: &Path,
+        cancel: &CancellationToken,
+    ) -> GenResult<()> {
+        let mut response = self
+            .client
+            .get(url)
+            .send()
+            .await
+            .map_err(|e| GenError::Network(e.to_string()))?;
+
+        if !response.status().is_success() {
+            return Err(GenError::Backend(format!(
+                "Download returned HTTP {}",
+                response.status()
+            )));
+        }
+
+        if let Some(parent) = dest_path.parent() {
+            tokio::fs::create_dir_all(parent).await?;
+        }
+
+        let mut file = tokio::fs::File::create(dest_path).await?;
+        use tokio::io::AsyncWriteExt;
+
+        while let Some(chunk) = response
+            .chunk()
+            .await
+            .map_err(|e| GenError::Network(e.to_string()))?
+        {
+            if cancel.is_cancelled() {
+                let _ = tokio::fs::remove_file(dest_path).await;
+                return Err(GenError::Cancelled);
+            }
+            file.write_all(&chunk).await?;
+        }
+
+        file.flush().await?;
+        Ok(())
+    }
+}
+
+/// HTTP REST backend client implementation for self-hosted or custom gateways.
 #[derive(Clone)]
 pub struct HttpGenerationBackend {
     base_url: String,

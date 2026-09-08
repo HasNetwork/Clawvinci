@@ -1,6 +1,6 @@
 // Copyright (C) 2026 Clawvinci Contributors.
 // SPDX-License-Identifier: GPL-3.0-only
-//! Clawvinci Search & ML Engine (Phase 10): Transcript indexing, SigLIP2 embeddings, semantic search.
+//! Clawvinci Search & ML Engine (Phase 10 & 12): Transcript indexing, BYOK & Local Whisper transcription, SigLIP2 embeddings, semantic search.
 
 pub mod coordinator;
 pub mod error;
@@ -13,9 +13,13 @@ pub use coordinator::{
 pub use error::{SearchError, SearchResult};
 pub use transcription::{
     BackendTranscriptionJob, BackendTranscriptionStatus, BackendTranscriptionSubmit,
-    CutAggressiveness, CutWord, TranscriptCache, TranscriptHit, TranscriptSearch,
-    TranscriptionBackend, TranscriptionBackendConfig, TranscriptionProvider, TranscriptionResult,
-    TranscriptionSegment, TranscriptionWord, WordCutPlanner,
+    CutAggressiveness, CutWord, DeterministicLocalTranscriber, LocalWhisperEngine,
+    LocalWhisperTranscriber, TranscriptCache, TranscriptHit, TranscriptSearch,
+    TranscriptionBackend, TranscriptionBackendConfig, TranscriptionEngineMode,
+    TranscriptionProvider, TranscriptionResult, TranscriptionSegment, TranscriptionService,
+    TranscriptionWord, WhisperAudioPreprocessor, WhisperModelFileSpec, WhisperModelManifest,
+    WhisperModelSpec, WordCutPlanner, WHISPER_HOP_LENGTH, WHISPER_N_FFT, WHISPER_N_MELS,
+    WHISPER_SAMPLE_RATE,
 };
 pub use visual::{
     AssetIndex, EmbeddingHeader, EmbeddingRow, EmbeddingStore, FrameSamplerOptions,

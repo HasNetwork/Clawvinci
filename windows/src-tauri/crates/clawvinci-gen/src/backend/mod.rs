@@ -4,5 +4,8 @@
 pub mod client;
 pub mod types;
 
-pub use client::{GenerationBackendClient, HttpGenerationBackend, MockGenerationBackend};
+pub use client::{
+    ByokGenerationBackend, ByokProviderConfig, GenerationBackendClient, HttpGenerationBackend,
+    MockGenerationBackend,
+};
 pub use types::{BackendGenerationJob, BackendGenerationStatus};

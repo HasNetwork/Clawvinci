@@ -16,7 +16,7 @@ tokio.workspace = true
 tracing.workspace = true
 sha2 = "0.10"
 half = { version = "2.4", features = ["serde"] }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "multipart", "stream"] }
 
 [dev-dependencies]
 uuid = { workspace = true, features = ["v4"] }

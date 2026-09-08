@@ -884,6 +884,43 @@ async fn mcp_server_status() -> Result<McpServerStatusDto, String> {
     })
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateCheckResultDto {
+    pub available: bool,
+    pub current_version: String,
+    pub latest_version: Option<String>,
+    pub body: Option<String>,
+    pub date: Option<String>,
+}
+
+#[tauri::command]
+async fn app_check_for_updates(app: tauri::AppHandle) -> Result<UpdateCheckResultDto, String> {
+    use tauri_plugin_updater::UpdaterExt;
+    let current_version = app.package_info().version.to_string();
+    let updater = match app.updater() {
+        Ok(u) => u,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    match updater.check().await {
+        Ok(Some(update)) => Ok(UpdateCheckResultDto {
+            available: true,
+            current_version,
+            latest_version: Some(update.version.clone()),
+            body: update.body.clone(),
+            date: update.date.map(|d| d.to_string()),
+        }),
+        Ok(None) => Ok(UpdateCheckResultDto {
+            available: false,
+            current_version,
+            latest_version: None,
+            body: None,
+            date: None,
+        }),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut timeline = Timeline::new(30, 1920, 1080);
@@ -1006,6 +1043,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(state)
         .invoke_handler(tauri::generate_handler![
             playback_get_state,
@@ -1041,6 +1079,7 @@ pub fn run() {
             agent_chat_history,
             agent_chat_clear,
             mcp_server_status,
+            app_check_for_updates,
         ])
         .setup(|_app| Ok(()))
         .run(tauri::generate_context!())
