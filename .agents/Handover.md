@@ -3,9 +3,9 @@
 > **Document Purpose**: Authoritative orientation and implementation manual for the incoming AI agent / engineering team.  
 > **Workspace Root**: `d:\projects\palmier-win\.claude\worktrees\plan-windows-port`  
 > **Current Git Branch**: `worktree-plan-windows-port`  
-> **Last Clean Commit**: `9b9bbfc`  
-> **CI Verification Status**: ✅ **100% Green** on GitHub Actions Run `34195654610` (Check, Clippy, Test, Tauri Build & Artifact Upload)  
-> **Active Target Milestone**: **Phase 11.0 — Generative AI Integration (`clawvinci-gen`)**
+> **Last Clean Commit**: `fb7402c`  
+> **CI Verification Status**: ✅ **100% Green** on GitHub Actions Run `34208682487` (Check, Clippy, Test, Tauri Build & Artifact Upload)  
+> **Active Target Milestone**: **Phase 12.0 — Auth, Backend, Telemetry & Auto-Updater**
 
 ---
 
@@ -20,7 +20,7 @@ A foundational mental model for Clawvinci is that it is **"Cursor IDE" but for V
 - **Symmetric Collaboration**: Human editor and AI agent share the exact same domain state, see the exact same canvas, and operate through a unified, frame-accurate undo/redo history.
 
 ### Core Technology Stack
-- **Backend (Rust Workspace)**: `windows/src-tauri/crates/*` managing media decode/encode, timeline state, undo/redo history, frame compositing, export, search/ML, audio DSP, and MCP protocol execution.
+- **Backend (Rust Workspace)**: `windows/src-tauri/crates/*` managing media decode/encode, timeline state, undo/redo history, frame compositing, export, search/ML, audio DSP, MCP protocol execution, and generative AI services.
 - **Frontend Shell (Tauri v2 + Web)**: `windows/src/*` hosting a high-performance web frontend with vanilla HTML5/CSS/JavaScript and Canvas-based timeline rendering.
 - **Target Platform**: Windows 10 22H2+ (x86_64).
 - **Licensing**: GPL-3.0-only (mirroring original Palmier Pro).
@@ -60,7 +60,7 @@ All incoming agents working on this codebase **must strictly abide by these rule
 
 ---
 
-## 3. Current Implementation Status (Phases 0 – 10 Complete)
+## 3. Current Implementation Status (Phases 0 – 11 Complete)
 
 | Phase | Module / Crate | Scope & Deliverables | Verification Status |
 |---|---|---|---|
@@ -75,8 +75,8 @@ All incoming agents working on this codebase **must strictly abide by these rule
 | **8.0** | `clawvinci-mcp` | 52-tool MCP execution engine, embedded HTTP/SSE MCP server on `127.0.0.1:19789/mcp`, in-app agent chat orchestration. | ✅ CI Green (`8-0-mcp-agent-layer.md`, Run `34151682590`) |
 | **9.0** | `clawvinci-audio` | Audio analysis engine: Envelopes, real-time metering, cross-correlation sync, silence/dead-air planner, beat/tempo detector, VAD. | ✅ CI Green (`9-0-audio-analysis.md`, Run `34192487829`) |
 | **10.0** | `clawvinci-search` | Semantic visual search (SigLIP2 / `PALMEMB1` binary embeddings), transcript search, word cut planner. | ✅ CI Green (`10-0-search-transcription.md`, Run `34195654610`) |
-| **11.0** | `clawvinci-gen` | **ACTIVE HANDOVER TARGET**: Generative AI provider catalog, submissions, edit clients, preprocessing, and timeline insertion. | 🚀 **Ready for Implementation** (`11-0-generative-ai.md`) |
-| **12.0** | `clawvinci` (Tauri) | Auth, backend telemetry, auto-updater. | 📋 Planned (`12-0-auth-backend-telemetry-updater.md`) |
+| **11.0** | `clawvinci-gen` | Generative AI provider catalog, submissions, edit clients, preprocessing, timeline insertion, and MCP tools. | ✅ CI Green (`11-0-generative-ai.md`, Run `34208682487`) |
+| **12.0** | `clawvinci` (Tauri) | **ACTIVE HANDOVER TARGET**: Auth (Clerk), backend telemetry (PostHog/Sentry), auto-updater. | 🚀 **Ready for Implementation** (`12-0-auth-backend-telemetry-updater.md`) |
 | **13.0** | Entire app | Production polish, performance profiling, final documentation. | 📋 Planned (`13-0-polish.md`) |
 
 ---
