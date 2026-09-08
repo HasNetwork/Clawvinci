@@ -91,9 +91,7 @@ impl SilenceRemovalPlanner {
                 let start = i + if i > 0 { padding_cells } else { 0 };
                 let end = j - if j < quiet_non_speech_mask.len() { padding_cells } else { 0 };
                 if start < end {
-                    for cell in start..end {
-                        removable[cell] = true;
-                    }
+                    removable[start..end].fill(true);
                 }
             }
 

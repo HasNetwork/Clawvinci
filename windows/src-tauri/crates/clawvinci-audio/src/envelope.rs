@@ -50,7 +50,7 @@ pub fn compute_envelope(samples: &[f32], sample_rate: f64, hop_seconds: f64) -> 
     }
 
     let hop_size = ((sample_rate * hop_seconds).round() as usize).max(1);
-    let estimated_hops = (samples.len() + hop_size - 1) / hop_size;
+    let estimated_hops = samples.len().div_ceil(hop_size);
     let mut envelope_samples = Vec::with_capacity(estimated_hops);
 
     let mut sum_squares = 0.0f32;

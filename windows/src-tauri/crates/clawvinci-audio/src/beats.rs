@@ -49,7 +49,7 @@ impl BeatDetector {
 
         // Window into hop frames
         let hop_size = ((sample_rate * (BEAT_HOP as f64 / BEAT_SAMPLE_RATE)).round() as usize).max(1);
-        let frame_count = (samples.len() + hop_size - 1) / hop_size;
+        let frame_count = samples.len().div_ceil(hop_size);
         if frame_count < 3 {
             return BeatAnalysis::EMPTY;
         }

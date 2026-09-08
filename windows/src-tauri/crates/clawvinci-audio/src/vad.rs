@@ -53,9 +53,7 @@ impl VadAnalysis {
             let lo = ((span.start / VAD_CHUNK_DURATION).floor() as usize).min(self.chunk_count);
             let hi = ((span.end / VAD_CHUNK_DURATION).ceil() as usize).min(self.chunk_count);
             if lo < hi {
-                for cell in lo..hi {
-                    mask[cell] = true;
-                }
+                mask[lo..hi].fill(true);
             }
         }
         mask
@@ -72,7 +70,7 @@ impl VoiceActivityDetector {
             return VadAnalysis::new(0, Vec::new());
         }
 
-        let chunk_count = (samples.len() + VAD_CHUNK_SIZE - 1) / VAD_CHUNK_SIZE;
+        let chunk_count = samples.len().div_ceil(VAD_CHUNK_SIZE);
         let mut chunk_energies = Vec::with_capacity(chunk_count);
         let mut chunk_zcr = Vec::with_capacity(chunk_count);
 
@@ -301,9 +299,7 @@ impl SpeechMaskStore {
             let non_speech_median = median(&mut non_speech_peaks);
 
             if non_speech_median <= quiet_floor {
-                for c in i..j {
-                    dead[c] = true;
-                }
+                dead[i..j].fill(true);
             }
 
             i = j;

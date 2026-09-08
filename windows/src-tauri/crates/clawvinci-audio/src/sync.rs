@@ -287,7 +287,7 @@ impl AudioSyncCorrelator {
             || reference.len() < Self::PYRAMID_STRIDE * Self::MIN_OVERLAP
             || target.len() < Self::PYRAMID_STRIDE * Self::MIN_OVERLAP
         {
-            return Self::exact_candidates(reference, target, &[lag_range.clone()], min_overlap_hops);
+            return Self::exact_candidates(reference, target, std::slice::from_ref(lag_range), min_overlap_hops);
         }
 
         let coarse_target = Self::downsample(target, Self::PYRAMID_STRIDE, 0);
@@ -305,7 +305,7 @@ impl AudioSyncCorrelator {
             }
 
             let coarse_ref = Self::downsample(reference, Self::PYRAMID_STRIDE, phase);
-            let coarse_overlap = 4.max((min_overlap_hops + Self::PYRAMID_STRIDE - 1) / Self::PYRAMID_STRIDE);
+            let coarse_overlap = 4.max(min_overlap_hops.div_ceil(Self::PYRAMID_STRIDE));
             let cands = Self::correlate_candidates(
                 &coarse_ref,
                 &coarse_target,
@@ -441,7 +441,7 @@ impl AudioSyncCorrelator {
             return samples[offset..].to_vec();
         }
 
-        let mut out = Vec::with_capacity((samples.len() - offset + stride - 1) / stride);
+        let mut out = Vec::with_capacity((samples.len() - offset).div_ceil(stride));
         let mut start = offset;
         while start < samples.len() {
             let end = (start + stride).min(samples.len());
