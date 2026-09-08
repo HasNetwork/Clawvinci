@@ -14,7 +14,6 @@ use clawvinci_search::visual::{
     SAMPLER_VERSION,
 };
 use std::fs;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 #[test]
