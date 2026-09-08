@@ -3,8 +3,8 @@
 > **Document Purpose**: Authoritative orientation and implementation manual for the incoming AI agent / engineering team.  
 > **Workspace Root**: `d:\projects\palmier-win\.claude\worktrees\plan-windows-port`  
 > **Current Git Branch**: `worktree-plan-windows-port`  
-> **Last Clean Commit**: `fb7402c`  
-> **CI Verification Status**: ✅ **100% Green** on GitHub Actions Run `34208682487` (Check, Clippy, Test, Tauri Build & Artifact Upload)  
+> **Last Clean Commit**: `44796a7`  
+> **CI Verification Status**: ✅ **100% Green** on GitHub Actions Run `34216185710` (Check, Clippy, Test, Tauri Build & Artifact Upload)  
 > **Active Target Milestone**: **Phase 13.0 — Polish (localization, settings panes, home/onboarding, in-app help)**  
 > **Completed Milestone**: **Phase 12.0 — BYOK/local cleanup + Auto-Updater** (Decision 10: zero telemetry, BYOK Whisper + local on-device ML, ByokGenerationBackend, Tauri v2 updater)
 
