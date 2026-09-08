@@ -7,12 +7,12 @@ use crate::transcription::cache::TranscriptCache;
 use crate::transcription::result::TranscriptionResult;
 use crate::transcription::search::{TranscriptHit, TranscriptSearch};
 use crate::visual::loader::VisualModelLoader;
-use crate::visual::model::{ModelSpec, VisualEmbedder};
+use crate::visual::model::ModelSpec;
 use crate::visual::search::{VisualHit, VisualSearch};
 use crate::visual::store::{AssetIndex, EmbeddingStore};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

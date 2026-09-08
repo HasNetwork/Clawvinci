@@ -24,7 +24,13 @@ pub fn get_transcript(args: &Value, state: &mut McpState) -> ToolResult {
     let clip_id_filter = args.get("clipId").and_then(|v| v.as_str());
     let fps = state.editor.timeline().fps;
 
-    let clips = state.editor.timeline().all_clips();
+    let clips: Vec<_> = state
+        .editor
+        .timeline()
+        .tracks
+        .iter()
+        .flat_map(|t| t.clips.iter())
+        .collect();
     let mut clips_out = Vec::new();
     let mut total_words = 0;
 
@@ -116,10 +122,16 @@ pub fn remove_words(args: &Value, state: &mut McpState) -> ToolResult {
     };
 
     let fps = state.editor.timeline().fps;
-    let keep_gap = aggressiveness.kept_gap_frames(fps);
+    let keep_gap = aggressiveness.kept_gap_frames(fps as f64);
 
     // Build synthetic word stream from timeline clips
-    let clips = state.editor.timeline().all_clips();
+    let clips: Vec<_> = state
+        .editor
+        .timeline()
+        .tracks
+        .iter()
+        .flat_map(|t| t.clips.iter())
+        .collect();
     let mut words = Vec::new();
     let mut total_words = 0;
 
@@ -134,7 +146,7 @@ pub fn remove_words(args: &Value, state: &mut McpState) -> ToolResult {
         }
     }
 
-    let cuts = WordCutPlanner::cut_ranges(&words, 0, state.editor.timeline().duration_frames(), keep_gap);
+    let cuts = WordCutPlanner::cut_ranges(&words, 0, state.editor.timeline().total_frames(), keep_gap);
 
     state.bump_version();
     ToolResult::json(&json!({
