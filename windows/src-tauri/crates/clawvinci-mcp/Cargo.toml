@@ -12,6 +12,7 @@ clawvinci-media = { path = "../clawvinci-media" }
 clawvinci-render = { path = "../clawvinci-render" }
 clawvinci-export = { path = "../clawvinci-export" }
 clawvinci-audio = { path = "../clawvinci-audio" }
+clawvinci-search = { path = "../clawvinci-search" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

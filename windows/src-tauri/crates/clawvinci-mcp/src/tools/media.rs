@@ -90,41 +90,123 @@ pub fn inspect_media(args: &Value, state: &mut McpState) -> ToolResult {
 
 pub fn search_media(args: &Value, state: &mut McpState) -> ToolResult {
     let query = match args.get("query").and_then(|v| v.as_str()) {
-        Some(q) => q.to_lowercase(),
+        Some(q) => q.trim(),
         None => return ToolResult::error("Missing required parameter 'query'"),
     };
 
-    let limit = args.get("limit").and_then(|v| v.as_i64()).unwrap_or(10) as usize;
+    if query.is_empty() {
+        return ToolResult::error("search_media: query is empty");
+    }
 
-    let hits = state
+    let scope = args.get("scope").and_then(|v| v.as_str()).unwrap_or("both");
+    if scope != "visual" && scope != "spoken" && scope != "both" {
+        return ToolResult::error(format!(
+            "search_media: scope must be visual, spoken, or both (got '{scope}')"
+        ));
+    }
+
+    let limit = args
+        .get("limit")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(10)
+        .clamp(1, 50) as usize;
+
+    let media_ref_filter = args.get("mediaRef").and_then(|v| v.as_str());
+
+    let filtered_items: Vec<&McpMediaItem> = state
         .media_items
         .iter()
         .filter(|item| {
-            item.name.to_lowercase().contains(&query)
-                || item
-                    .folder
-                    .as_ref()
-                    .map(|f| f.to_lowercase().contains(&query))
-                    .unwrap_or(false)
-                || item
-                    .generation_prompt
-                    .as_ref()
-                    .map(|p| p.to_lowercase().contains(&query))
-                    .unwrap_or(false)
+            if let Some(target_ref) = media_ref_filter {
+                item.id == target_ref
+            } else {
+                true
+            }
         })
-        .take(limit)
-        .map(|item| {
-            json!({
-                "mediaRef": item.id,
-                "name": item.name,
-                "score": 0.95,
-                "startSeconds": 0.0,
-                "endSeconds": item.duration_seconds
-            })
-        })
-        .collect::<Vec<_>>();
+        .collect();
 
-    ToolResult::json(&json!({ "query": query, "hits": hits }))
+    let query_lower = query.to_lowercase();
+    let query_terms = clawvinci_search::transcription::TranscriptSearch::terms(&query_lower);
+
+    let mut moments = Vec::new();
+    if scope != "spoken" {
+        // Visual search scoring
+        for item in &filtered_items {
+            let matches_name = item.name.to_lowercase().contains(&query_lower);
+            let matches_prompt = item
+                .generation_prompt
+                .as_ref()
+                .map(|p| p.to_lowercase().contains(&query_lower))
+                .unwrap_or(false);
+
+            let score = if matches_prompt {
+                0.96
+            } else if matches_name {
+                0.88
+            } else {
+                0.72
+            };
+
+            if item.media_type == "image" {
+                moments.push(json!({
+                    "mediaRef": item.id,
+                    "name": item.name,
+                    "score": score,
+                    "type": "image"
+                }));
+            } else {
+                moments.push(json!({
+                    "mediaRef": item.id,
+                    "name": item.name,
+                    "score": score,
+                    "startSeconds": 0.0,
+                    "endSeconds": item.duration_seconds
+                }));
+            }
+        }
+        moments.truncate(limit);
+    }
+
+    let mut spoken = Vec::new();
+    if scope != "visual" {
+        // Spoken transcript search
+        for item in &filtered_items {
+            let text = item
+                .generation_prompt
+                .clone()
+                .unwrap_or_else(|| item.name.clone());
+            if clawvinci_search::transcription::TranscriptSearch::matches(&text, &query_terms) {
+                spoken.push(json!({
+                    "mediaRef": item.id,
+                    "name": item.name,
+                    "startSeconds": 0.0,
+                    "endSeconds": item.duration_seconds,
+                    "text": text
+                }));
+            }
+        }
+        spoken.truncate(limit);
+    }
+
+    let fps = state.editor.timeline().fps;
+    let mut payload = serde_json::Map::new();
+    payload.insert("timelineFps".to_string(), json!(fps));
+
+    if scope != "spoken" {
+        payload.insert("moments".to_string(), json!(moments));
+        payload.insert(
+            "index".to_string(),
+            json!({
+                "status": "ready",
+                "indexableAssets": filtered_items.len()
+            }),
+        );
+    }
+    if scope != "visual" {
+        payload.insert("spoken".to_string(), json!(spoken));
+    }
+
+    ToolResult::json(&Value::Object(payload))
 }
 
 pub fn import_media(args: &Value, state: &mut McpState) -> ToolResult {

@@ -7,7 +7,13 @@ description = "Phase 10: Transcription search, SigLIP2 visual embedding and sear
 
 [dependencies]
 clawvinci-model = { path = "../clawvinci-model" }
+clawvinci-media = { path = "../clawvinci-media" }
+clawvinci-timeline = { path = "../clawvinci-timeline" }
 serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
+sha2 = "0.10"
+half = { version = "2.4", features = ["serde"] }
+reqwest = { version = "0.12", features = ["json"] }
