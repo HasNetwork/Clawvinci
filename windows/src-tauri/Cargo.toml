@@ -43,6 +43,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 uuid.workspace = true
 tokio-util.workspace = true
+chrono.workspace = true
 
 # Phase crates
 clawvinci-model = { path = "crates/clawvinci-model" }

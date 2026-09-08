@@ -32,6 +32,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
+use chrono::Utc;
 
 pub mod settings;
 use settings::{
@@ -958,9 +959,9 @@ async fn project_recent_list() -> Result<Vec<RecentProjectDto>, String> {
 #[serde(rename_all = "camelCase")]
 pub struct ProjectCreatePayload {
     pub name: String,
-    pub fps: Option<u32>,
-    pub width: Option<u32>,
-    pub height: Option<u32>,
+    pub fps: Option<i32>,
+    pub width: Option<i32>,
+    pub height: Option<i32>,
 }
 
 #[tauri::command]
@@ -984,7 +985,7 @@ async fn project_create(
         id: Uuid::new_v4().to_string(),
         name: payload.name,
         path: format!("local://{}", Uuid::new_v4()),
-        last_opened: chrono::Utc::now().to_rfc3339(),
+        last_opened: Utc::now().to_rfc3339(),
         duration_seconds: 0.0,
     };
     let _ = record_recent_project(recent);
