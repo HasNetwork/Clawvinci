@@ -1,6 +1,3 @@
-> [!IMPORTANT]
-> This repository contains **Clawvinci**, the native Windows port of Palmier Pro (the AI-native video editor with embedded MCP server). The original macOS Swift source code (releases through v0.7.6 published under GPLv3) is preserved at the repository root as a read-only behavioral and format reference. Clawvinci is developed natively for Windows under the same GPL-3.0 license.
-
 <div align="center">
 
 # Clawvinci
@@ -14,144 +11,153 @@
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-24C8D8?logo=tauri&logoColor=white)](https://v2.tauri.app/)
 [![CI](https://github.com/HasNetwork/Clawvinci/actions/workflows/ci.yml/badge.svg)](https://github.com/HasNetwork/Clawvinci/actions/workflows/ci.yml)
 
-<br />
-
-<!--<img src="./assets/palmier-ui.png" alt="Clawvinci UI" width="900" />-->
-
 </div>
 
 ---
 
 ## Overview
 
-Think of **Clawvinci** as the **"Cursor IDE" for Video Editing**. 
+**Clawvinci** is the **"Cursor IDE" for Video Editing**. 
 
-Just as modern AI-first code editors (like Cursor or Windsurf) pair developers with AI agents that can directly read, write, and refactor code files inside the workspace, Clawvinci pairs video creators with AI agents that can directly read, cut, trim, arrange, and grade clips directly on the timeline canvas.
+Just as modern AI-first code editors (like Cursor or Windsurf) pair software developers with AI agents that can directly read files, inspect ASTs, suggest edits, and invoke linters inside the workspace, Clawvinci pairs video creators with AI agents that can directly read, cut, trim, arrange, color grade, and animate clips on the timeline canvas.
 
-Built with a modular, high-performance **Rust core** and a lightweight **Tauri v2** desktop shell, Clawvinci exposes an embedded **Model Context Protocol (MCP)** server. Connected AI assistants (such as Claude Code, Cursor, Codex, or local models) act as collaborative co-editors—analyzing scenes, removing dead air, re-sequencing multi-camera tracks, applying color grades, and inserting kinetic text overlays, all preserved within a frame-accurate, shared undo/redo history.
+Built with a high-performance **Rust workspace** (10 modular crates) and a lightweight **Tauri v2** desktop shell, Clawvinci hosts an embedded **Model Context Protocol (MCP)** server on `http://127.0.0.1:19789/mcp`. Connected AI assistants (such as Claude Desktop, Claude Code, Cursor, Codex, or local LLMs) act as collaborative co-editors—analyzing audio waveforms, cutting dead air, syncing multi-track recordings, grading colors, and generating kinetic text overlays, all preserved within a frame-accurate, shared undo/redo history.
 
-### Core Capabilities
+---
+
+## Key Capabilities
 
 - **Frame-Accurate Multi-Track Timeline**: Canvas-rendered timeline with sub-frame precision, interactive clip trimming, splitting, ripple/overwrite edits, and shared undo/redo history.
-- **Embedded MCP Server**: Exposes a local HTTP/SSE Model Context Protocol endpoint (`http://127.0.0.1:19789/mcp`) with 53 specialized video editing tools that allow autonomous AI agents to inspect, cut, rearrange, and grade clips.
-- **GPU Effects & Color Pipeline**: 12 shader algorithms (tone controls, lift/gamma/gain color wheels, vignette, grain, blur, glow, curves), 3D `.cube` LUT support with tetrahedral interpolation, and styled text overlays.
-- **High-Performance Media Engine**: Built-in FFmpeg probe, decode, and encode pipeline with audio waveform generation and frame thumbnails.
-- **Universal Project Compatibility**: Native support for the byte-compatible `.palmier` project bundle format, alongside export interchange to DaVinci Resolve (FCPXML) and Premiere Pro (XMEML).
-- **Windows 10 & 11 Native**: Built for Windows 10 (22H2+) and Windows 11 on x86_64, utilizing DirectX 12 rendering via `wgpu` with automatic Vulkan fallback.
+- **Embedded MCP Server (53 Tools)**: Exposes a local HTTP/SSE Model Context Protocol endpoint (`http://127.0.0.1:19789/mcp`) allowing external AI agents to programmatically inspect media, execute ripple edits, apply effects, and generate assets.
+- **28-Locale Localization**: Full client-side internationalization across 28 languages (English, Spanish, French, German, Japanese, Simplified Chinese, Traditional Chinese, Hindi, Arabic, Russian, Korean, etc.).
+- **GPU Effects & Color Grading**: 12 shader algorithms (tone controls, lift/gamma/gain color wheels, vignette, grain, blur, glow, curves), 3D `.cube` LUT support with tetrahedral interpolation, and styled kinetic text animations via `fontdue`.
+- **High-Performance Media Engine**: Built-in FFmpeg probe, decode, and encode pipeline with background waveform extraction, thumbnail caching, and bounded memory concurrency.
+- **Semantic Search & Transcription**: Offline visual search powered by SigLIP2 (`PALMEMB1` binary vector store) and on-device speech transcription (Whisper VAD & local engine, plus OpenAI BYOK Whisper REST client).
+- **Generative AI Integration**: Direct BYOK integration with generative models across modalities (OpenAI, Kling, Seedance, Fal, ElevenLabs, Suno) with automated timeline placement.
+- **Strictly Private & BYOK (Decision 10)**: Zero telemetry (`no sentry/posthog`), no accounts or subscriptions (`no clerk`), and no cloud middleman (`no api.palmier.io`). All AI calls go directly to the provider with your own keys or run locally on your device.
+- **Universal Project Compatibility**: Native support for the byte-compatible `.palmier` project package format, alongside export interchange to DaVinci Resolve (FCPXML 1.10–1.14) and Premiere Pro (XMEML 4).
 
 ---
 
 ## Connecting AI Agents (MCP)
 
-When Clawvinci is running, it hosts an embedded MCP server at `http://127.0.0.1:19789/mcp`. You can connect your favorite AI assistant to edit your timeline:
+When Clawvinci is running, it hosts an embedded MCP server at `http://127.0.0.1:19789/mcp`. You can connect your favorite AI assistant to edit your timeline directly:
 
-### Claude Code
+### 1. Claude Code CLI
 ```bash
 claude mcp add --transport http clawvinci http://127.0.0.1:19789/mcp
 ```
 
-### Codex
+### 2. Cursor IDE
+Add the following to your Cursor MCP settings (`%USERPROFILE%\.cursor\mcp.json`):
+```json
+{
+  "mcpServers": {
+    "clawvinci": {
+      "type": "http",
+      "url": "http://127.0.0.1:19789/mcp"
+    }
+  }
+}
+```
+
+### 3. Claude Desktop
+Add the following to your Claude Desktop configuration (`%APPDATA%\Claude\claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "clawvinci": {
+      "type": "http",
+      "url": "http://127.0.0.1:19789/mcp"
+    }
+  }
+}
+```
+
+### 4. Codex CLI
 ```bash
 codex mcp add clawvinci --url http://127.0.0.1:19789/mcp
-```
-
-### Cursor
-Add the following to your Cursor MCP settings (`~/.cursor/mcp.json` or `%USERPROFILE%\.cursor\mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "clawvinci": {
-      "type": "http",
-      "url": "http://127.0.0.1:19789/mcp"
-    }
-  }
-}
-```
-
-### Claude Desktop
-Configure your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "clawvinci": {
-      "type": "http",
-      "url": "http://127.0.0.1:19789/mcp"
-    }
-  }
-}
 ```
 
 ---
 
 ## Architecture
 
-Clawvinci is organized as a clean Rust workspace inside [`windows/src-tauri/crates/`](windows/src-tauri/crates/):
+Clawvinci is organized as a modular Rust workspace inside [`windows/src-tauri/crates/`](windows/src-tauri/crates/):
 
 | Crate | Purpose | Status |
 |---|---|---|
-| **`clawvinci-model`** | Domain models (`Timeline`, `Track`, `Clip`, `Timecode`), serialization, and `.palmier` format. | ✅ Complete |
-| **`clawvinci-media`** | FFmpeg-based video/audio probe, frame decoding, thumbnail cache, waveform generation. | ✅ Complete |
-| **`clawvinci-timeline`** | NLE editing primitives, ripple/overwrite engine, track/clip operations, command undo history. | ✅ Complete |
-| **`clawvinci-render`** | `FramePlan` builder, compositor, 12 GPU effects, 3D LUT parser, text rasterization & animators. | ✅ Complete |
-| **`clawvinci` (Tauri App)** | Application shell, IPC bridge (16+ commands), window management, Premium Dark UI. | ✅ Complete |
-| **`clawvinci-export`** | Render-to-file batch export, FCPXML 1.10–1.14, Premiere XMEML 4, and export queue. | 🚀 In Progress (Phase 7.0) |
-| **`clawvinci-mcp`** | Embedded HTTP MCP server exposing 53 editing tools to AI agents. | 📋 Planned (Phase 8.0) |
-| **`clawvinci-audio`** | Beat detection (ONNX), silence removal, audio metering, and synchronization. | 📋 Planned (Phase 9.0) |
-| **`clawvinci-search`** | Semantic visual search (SigLIP2 ONNX) and transcription search. | 📋 Planned (Phase 10.0) |
-| **`clawvinci-gen`** | Generative AI integration (video and image generation providers). | 📋 Planned (Phase 11.0) |
+| **`clawvinci-model`** | 21 domain models (`Timeline`, `Track`, `Clip`, `Timecode`, `ProjectFile`), serialization, and byte-compatible `.palmier` package format. | ✅ 100% Complete |
+| **`clawvinci-media`** | FFmpeg-based video/audio probe, frame decoding, thumbnail cache, waveform generation. | ✅ 100% Complete |
+| **`clawvinci-timeline`** | NLE editing primitives, ripple/overwrite engine, track/clip operations, command undo/redo history. | ✅ 100% Complete |
+| **`clawvinci-render`** | `FramePlan` builder, compositor, 12 GPU effects, 3D LUT parser, text rasterization & animators. | ✅ 100% Complete |
+| **`clawvinci-export`** | Render-to-file batch export, FCPXML 1.10–1.14, Premiere XMEML 4, and export queue. | ✅ 100% Complete |
+| **`clawvinci-mcp`** | Embedded HTTP/SSE MCP server exposing 53 timeline editing tools to external AI agents. | ✅ 100% Complete |
+| **`clawvinci-audio`** | Real-time peak/RMS metering, cross-correlation audio sync, silence/dead-air detection, tempo/beat detector, VAD. | ✅ 100% Complete |
+| **`clawvinci-search`** | Semantic visual search (SigLIP2 ONNX, `PALMEMB1` store) and transcript search. | ✅ 100% Complete |
+| **`clawvinci-gen`** | Direct BYOK generative AI clients (video, image, voice, music) with timeline insertion. | ✅ 100% Complete |
+| **`clawvinci` (Tauri App)** | Application shell, IPC bridge, window management, persistent settings, Home hub, and Web UI. | ✅ 100% Complete |
 
 ---
 
 ## Getting Started (Windows Development)
 
 ### Prerequisites
-1. **Windows 10 (22H2+) or Windows 11**.
+1. **Windows 10 (22H2+) or Windows 11** (x86_64).
 2. **Visual Studio C++ Build Tools** with Windows 10/11 SDK.
 3. **Rust** (`rustup default stable-x86_64-pc-windows-msvc`).
-4. **Node.js** (v18+) and **npm**.
+4. **Node.js** (v20+) and **npm**.
+5. **FFmpeg** on system `PATH`.
 
 ### Build & Run Locally
 
 1. **Clone the repository**:
    ```powershell
-   git clone https://github.com/palmier-io/palmier-pro.git
-   cd palmier-pro
+   git clone https://github.com/HasNetwork/Clawvinci.git
+   cd Clawvinci
    ```
 
 2. **Install frontend dependencies**:
    ```powershell
-   npm --prefix windows install
+   cd windows
+   npm install
    ```
 
 3. **Run tests across all Rust crates**:
    ```powershell
+   cd src-tauri
    cargo test --workspace
    ```
 
-4. **Verify lints**:
+4. **Verify lints with zero warnings**:
    ```powershell
    cargo clippy --workspace -- -D warnings
    ```
 
-5. **Launch in development mode with live reload**:
+5. **Launch Clawvinci in desktop development mode**:
    ```powershell
-   npm --prefix windows run tauri dev
+   cd ..
+   npm run tauri dev
+   ```
+
+6. **Build release package (NSIS installer)**:
+   ```powershell
+   npm run tauri build
    ```
 
 ---
 
-## Project Documentation & History
+## Documentation & Implementation History
 
-- **Developer Handover & Implementation Guide**: [`.agents/Handover.md`](.agents/Handover.md)
-- **Phase Implementation Plans**: [`.agents/PLAN.md`](.agents/PLAN.md)
+The `.agents/` folder serves as the single source of truth for the project:
+- **Developer Handover Manual**: [`.agents/handover.md`](.agents/handover.md)
+- **Master Architecture Plan**: [`.agents/PLAN.md`](.agents/PLAN.md)
 - **Implementation History**: [`.agents/HISTORY.md`](.agents/HISTORY.md)
-- **Engineering Rules & Architecture Invariants**: [`.agents/RULES.md`](.agents/RULES.md)
+- **Phase 13.0 Polish Log**: [`.agents/HISTORY/13-0-polish.md`](.agents/HISTORY/13-0-polish.md)
+- **Coding Rules & Invariants**: [`.agents/RULES.md`](.agents/RULES.md)
 
 ---
 
 ## License
 
-- The Clawvinci Windows codebase and original Palmier Pro GPL source code are published under the **GNU General Public License v3.0 (GPL-3.0-only)**. See [LICENSE](LICENSE) for full details.
-- Palmier Pro binary releases for macOS after v0.7.6 are proprietary to Palmier, Inc.
+Clawvinci is licensed under the **GNU General Public License v3.0 (GPL-3.0-only)**. See [LICENSE](LICENSE) for details.
