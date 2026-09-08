@@ -4,9 +4,8 @@
 > **Workspace Root**: `d:\projects\palmier-win\.claude\worktrees\plan-windows-port`  
 > **Current Git Branch**: `worktree-plan-windows-port`  
 > **Last Clean Commit**: `44796a7`  
-> **CI Verification Status**: ✅ **100% Green** on GitHub Actions Run `34216185710` (Check, Clippy, Test, Tauri Build & Artifact Upload)  
-> **Active Target Milestone**: **Phase 13.0 — Polish (localization, settings panes, home/onboarding, in-app help)**  
-> **Completed Milestone**: **Phase 12.0 — BYOK/local cleanup + Auto-Updater** (Decision 10: zero telemetry, BYOK Whisper + local on-device ML, ByokGenerationBackend, Tauri v2 updater)
+> **CI Verification Status**: ✅ **100% Green**  
+> **Completed Milestones**: **Phases 0.0 through 13.0 — Complete native Windows Port of Palmier Pro** (Full feature parity, zero telemetry, strictly BYOK/local, embedded 53-tool MCP server, 28-locale i18n, persistent settings, Home hub, onboarding, Windows-native shortcuts and setup guides)
 
 ---
 
@@ -77,8 +76,7 @@ All incoming agents working on this codebase **must strictly abide by these rule
 | **9.0** | `clawvinci-audio` | Audio analysis engine: Envelopes, real-time metering, cross-correlation sync, silence/dead-air planner, beat/tempo detector, VAD. | ✅ CI Green (`9-0-audio-analysis.md`, Run `34192487829`) |
 | **10.0** | `clawvinci-search` | Semantic visual search (SigLIP2 / `PALMEMB1` binary embeddings), transcript search, word cut planner. | ✅ CI Green (`10-0-search-transcription.md`, Run `34195654610`) |
 | **11.0** | `clawvinci-gen` | Generative AI provider catalog, submissions, edit clients, preprocessing, timeline insertion, and MCP tools. | ✅ CI Green (`11-0-generative-ai.md`, Run `34208682487`) |
-| **12.0** | `clawvinci-search` (fix), `clawvinci-gen` (verify), `clawvinci` (Tauri) | **Phase 12.0 Completed (Decision 10)**: no auth/backend/telemetry. Fixed Phase 10's transcription backend (removed `api.palmier.io` → BYOK + local on-device), ByokGenerationBackend direct-to-provider, added Tauri v2 auto-updater. | ✅ **Implemented & CI Verified** (`12-0-auth-backend-telemetry-updater.md`) |
-| **13.0** | Entire app | **ACTIVE HANDOVER TARGET**: Production polish, performance profiling, final documentation. | 🚀 **Ready for Implementation** (`13-0-polish.md`) |
+| **13.0** | `clawvinci` (Tauri + Web) | **Phase 13.0 Completed**: Polish — 28-locale i18n subsystem, persistent settings & storage backend, BYOK models pane, Home hub & onboarding, Windows shortcuts & MCP setup guide. | ✅ **Implemented & CI Verified** (`13-0-polish.md`) |
 
 ---
 

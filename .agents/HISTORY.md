@@ -19,9 +19,10 @@ immediately after that subphase's commit.
 | 11 | 11.0 | Generative AI integration: Model catalog, cost estimator, submission builders, preprocessing, service orchestrator, MCP tools | [`11-0-generative-ai.md`](HISTORY/11-0-generative-ai.md) |
 | 12 | 12.0 (plan revision) | Decision 10: no accounts/backend/telemetry — BYOK/local only. Docs-only; found and scoped a real defect (Phase 10's transcription backend calls `api.palmier.io`) for Phase 12 to fix | [`12-0-plan-revision-decision-10.md`](HISTORY/12-0-plan-revision-decision-10.md) |
 | 12 | 12.0 | BYOK/local cleanup + updater: Removed api.palmier.io, OpenAI BYOK Whisper + local on-device engine, ByokGenerationBackend, Tauri v2 updater | [`12-0-auth-backend-telemetry-updater.md`](HISTORY/12-0-auth-backend-telemetry-updater.md) |
+| 13 | 13.0 | Polish: 28-locale i18n subsystem, persistent settings & storage backend, BYOK models pane, Home hub & onboarding, Windows shortcuts & MCP setup guide | [`13-0-polish.md`](HISTORY/13-0-polish.md) |
 
 ## Handover & Continuation
 
-- **Completed Milestone**: Phase 12.0 (BYOK/Local Cleanup + Auto-Updater) implemented, audited, tested, and integrated.
-- **Next Active Target**: **Phase 13.0 — Polish (localization, settings panes, home/onboarding, in-app help)**. See `.agents/PLAN/13-0-polish.md`.
+- **Completed Milestone**: **Phase 13.0 — Polish: Localization, Settings, Home/Onboarding, Help & Windows MCP**. All phases (0.0 through 13.0) of Clawvinci Windows Port are fully implemented, audited, and verified.
+- **Project Status**: Full feature parity with macOS Palmier Pro achieved natively on Windows.
 

@@ -829,7 +829,7 @@
       <!-- Top Bar -->
       <header>
         <div class="header-left">
-          <div class="app-brand">
+          <div class="app-brand" id="brand-home-trigger" style="cursor:pointer;" title="Clawvinci Studio — Click for Project Hub">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="2" width="20" height="20" rx="2.18"/>
               <line x1="7" y1="2" x2="7" y2="22"/>
@@ -842,25 +842,32 @@
             </svg>
             <span>Clawvinci</span>
           </div>
-          <span class="project-title">Demo Project</span>
+          <button class="btn" id="btn-home" title="Projects Hub">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span data-i18n="Home">Home</span>
+          </button>
+          <span class="project-title" id="header-project-name">Demo Project</span>
 
           <div class="toolbar-sep"></div>
 
           <!-- Undo / Redo -->
           <button class="btn" id="btn-undo" title="Undo (Ctrl+Z)" disabled>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
-            <span>Undo</span>
+            <span data-i18n="Undo">Undo</span>
           </button>
           <button class="btn" id="btn-redo" title="Redo (Ctrl+Y)" disabled>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
-            <span>Redo</span>
+            <span data-i18n="Redo">Redo</span>
           </button>
         </div>
 
         <div class="header-center">
           <!-- Transport Controls -->
           <button class="btn" id="btn-step-back" title="Step -1 Frame (Left Arrow)">⏮</button>
-          <button class="btn primary" id="btn-play" title="Play / Pause (Space)">▶ Play</button>
+          <button class="btn primary" id="btn-play" title="Play / Pause (Space)">▶ <span data-i18n="Play">Play</span></button>
           <button class="btn" id="btn-step-fwd" title="Step +1 Frame (Right Arrow)">⏭</button>
           <div class="timecode-badge tabular-nums" id="timecode-display">00:00:00:00</div>
         </div>
@@ -873,9 +880,24 @@
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            <span>Export</span>
+            <span data-i18n="Export">Export</span>
           </button>
-          <div class="phase-badge">Phase 7.0 — Export Engine</div>
+          <button class="btn" id="btn-settings" title="Settings">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span data-i18n="Settings">Settings</span>
+          </button>
+          <button class="btn" id="btn-help" title="Help & Shortcuts">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span data-i18n="Help">Help</span>
+          </button>
+          <div class="phase-badge">Phase 13.0 — Polish &amp; MCP</div>
         </div>
       </header>
 
@@ -1064,6 +1086,557 @@
         </div>
       </div>
 
+      <!-- Settings Modal -->
+      <div class="modal-backdrop" id="settings-modal-backdrop">
+        <div class="modal-dialog settings-modal-dialog">
+          <div class="modal-header">
+            <div class="modal-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              <span data-i18n="Settings">Settings</span>
+            </div>
+            <button class="modal-close-btn" id="btn-close-settings">&times;</button>
+          </div>
+          <div class="settings-modal-body">
+            <!-- Sidebar Navigation -->
+            <div class="settings-sidebar">
+              <button class="settings-nav-item active" data-settings-tab="tab-settings-general">
+                <span class="settings-nav-icon">🌐</span>
+                <span data-i18n="General">General</span>
+              </button>
+              <button class="settings-nav-item" data-settings-tab="tab-settings-models">
+                <span class="settings-nav-icon">⚡</span>
+                <span>Models (BYOK)</span>
+              </button>
+              <button class="settings-nav-item" data-settings-tab="tab-settings-agent">
+                <span class="settings-nav-icon">🤖</span>
+                <span>Agent &amp; MCP</span>
+              </button>
+              <button class="settings-nav-item" data-settings-tab="tab-settings-appearance">
+                <span class="settings-nav-icon">🎨</span>
+                <span data-i18n="Appearance">Appearance</span>
+              </button>
+              <button class="settings-nav-item" data-settings-tab="tab-settings-storage">
+                <span class="settings-nav-icon">💾</span>
+                <span data-i18n="Storage">Storage</span>
+              </button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="settings-content-area">
+              <!-- General Pane -->
+              <div class="settings-tab-pane active" id="tab-settings-general">
+                <div class="settings-section">
+                  <h4 data-i18n="General">General</h4>
+                  <div class="form-row">
+                    <label class="form-label" data-i18n="Language">Language</label>
+                    <select class="form-select" id="setting-language"></select>
+                    <span class="form-hint" data-i18n="Language for the editor UI">Language for the editor UI (28 languages supported)</span>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Default Timeline Frame Rate</label>
+                    <select class="form-select" id="setting-default-fps">
+                      <option value="24">24 fps (Cinematic)</option>
+                      <option value="25">25 fps (PAL)</option>
+                      <option value="29.97">29.97 fps (NTSC)</option>
+                      <option value="30" selected>30 fps (Web Standard)</option>
+                      <option value="59.94">59.94 fps (Broadcast High)</option>
+                      <option value="60">60 fps (High Motion)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="settings-section">
+                  <h4>Software Updates</h4>
+                  <div class="form-row-h">
+                    <div>
+                      <div style="font-size:12px;font-weight:500;">Clawvinci v0.1.0 (Windows Native)</div>
+                      <div class="form-hint" id="settings-updater-status">Up to date</div>
+                    </div>
+                    <button class="btn" id="btn-settings-check-update">Check for Updates</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Models Pane (BYOK) -->
+              <div class="settings-tab-pane" id="tab-settings-models">
+                <div class="settings-section">
+                  <h4>Bring-Your-Own-Key (BYOK) Providers</h4>
+                  <p class="form-hint">Clawvinci operates with zero cloud middleman. API keys are saved locally and sent directly to external providers.</p>
+                  <div class="form-row">
+                    <label class="form-label">OpenAI API Key (Whisper Transcription &amp; GPT)</label>
+                    <div class="input-with-action">
+                      <input type="password" class="form-input" id="byok-openai" placeholder="sk-proj-..." />
+                      <button class="btn toggle-mask" data-target="byok-openai">👁</button>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Kling Video Generation (Access Key &amp; Secret Key)</label>
+                    <div style="display:flex;gap:8px;">
+                      <input type="password" class="form-input" id="byok-kling-ak" placeholder="Access Key ID" style="flex:1;" />
+                      <input type="password" class="form-input" id="byok-kling-sk" placeholder="Secret Key" style="flex:1;" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Fal.ai API Key (Image &amp; Video Generation)</label>
+                    <div class="input-with-action">
+                      <input type="password" class="form-input" id="byok-fal" placeholder="fal_..." />
+                      <button class="btn toggle-mask" data-target="byok-fal">👁</button>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">ElevenLabs API Key (Voice Synthesis)</label>
+                    <div class="input-with-action">
+                      <input type="password" class="form-input" id="byok-elevenlabs" placeholder="xi-api-key-..." />
+                      <button class="btn toggle-mask" data-target="byok-elevenlabs">👁</button>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Suno / Music API Key</label>
+                    <div class="input-with-action">
+                      <input type="password" class="form-input" id="byok-suno" placeholder="suno-key-..." />
+                      <button class="btn toggle-mask" data-target="byok-suno">👁</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="settings-section">
+                  <h4>On-Device Whisper Transcription</h4>
+                  <div class="form-row-h">
+                    <div class="form-row" style="flex:1;">
+                      <label class="form-label">Mode</label>
+                      <select class="form-select" id="setting-whisper-mode">
+                        <option value="auto">Auto (Local fallback to BYOK)</option>
+                        <option value="local">Local Only (On-device, no network)</option>
+                        <option value="byok">BYOK Only (OpenAI REST API)</option>
+                      </select>
+                    </div>
+                    <div class="form-row" style="flex:1;">
+                      <label class="form-label">Local Model Size</label>
+                      <select class="form-select" id="setting-whisper-size">
+                        <option value="tiny">Tiny (~75 MB, fastest)</option>
+                        <option value="base" selected>Base (~140 MB, recommended)</option>
+                        <option value="small">Small (~460 MB, high accuracy)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Agent & MCP Pane -->
+              <div class="settings-tab-pane" id="tab-settings-agent">
+                <div class="settings-section">
+                  <h4>Embedded Model Context Protocol (MCP) Server</h4>
+                  <p class="form-hint">Allows external AI agents (Cursor, Claude Desktop, Claude Code, Codex) to read and edit your timeline in real time.</p>
+                  
+                  <div class="mcp-status-box">
+                    <div class="mcp-status-dot green"></div>
+                    <div style="flex:1;">
+                      <div style="font-weight:600;font-size:12px;">MCP Server Running</div>
+                      <div class="tabular-nums" style="font-size:11px;color:var(--text-secondary);">Endpoint: http://127.0.0.1:19789/mcp</div>
+                    </div>
+                    <div class="badge" id="mcp-tools-badge">53 Tools Active</div>
+                  </div>
+
+                  <div style="margin-top:8px;display:flex;justify-content:flex-end;">
+                    <button class="btn" id="btn-goto-mcp-guide">View Windows Setup Instructions &rarr;</button>
+                  </div>
+                </div>
+
+                <div class="settings-section">
+                  <h4>In-App Agent Chat Key</h4>
+                  <div class="form-row">
+                    <label class="form-label">Anthropic Claude API Key (for in-editor chat panel)</label>
+                    <div class="input-with-action">
+                      <input type="password" class="form-input" id="byok-anthropic" placeholder="sk-ant-api03-..." />
+                      <button class="btn toggle-mask" data-target="byok-anthropic">👁</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Appearance Pane -->
+              <div class="settings-tab-pane" id="tab-settings-appearance">
+                <div class="settings-section">
+                  <h4>Timeline Track Colors</h4>
+                  <div class="color-picker-grid">
+                    <div class="color-picker-row">
+                      <label class="form-label">Video Clips</label>
+                      <input type="color" class="color-input" id="color-clip-video" value="#1d5878" />
+                    </div>
+                    <div class="color-picker-row">
+                      <label class="form-label">Audio Clips</label>
+                      <input type="color" class="color-input" id="color-clip-audio" value="#2e7765" />
+                    </div>
+                    <div class="color-picker-row">
+                      <label class="form-label">Text &amp; Titles</label>
+                      <input type="color" class="color-input" id="color-clip-text" value="#546e7a" />
+                    </div>
+                    <div class="color-picker-row">
+                      <label class="form-label">Image Clips</label>
+                      <input type="color" class="color-input" id="color-clip-image" value="#715486" />
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-section">
+                  <h4>Theme</h4>
+                  <div class="form-row">
+                    <label class="form-label">Color Theme</label>
+                    <select class="form-select" id="setting-theme">
+                      <option value="dark" selected>Premium Dark (NLE Studio Standard)</option>
+                      <option value="high-contrast">High Contrast Dark</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Storage Pane -->
+              <div class="settings-tab-pane" id="tab-settings-storage">
+                <div class="settings-section">
+                  <h4>Cache &amp; Storage Usage</h4>
+                  <div class="storage-metrics-list">
+                    <div class="storage-row">
+                      <div>
+                        <div style="font-weight:500;">Thumbnail Cache</div>
+                        <div class="form-hint" id="storage-thumb-size">0 KB</div>
+                      </div>
+                      <button class="btn" id="btn-clear-thumb-cache">Clear</button>
+                    </div>
+                    <div class="storage-row">
+                      <div>
+                        <div style="font-weight:500;">Waveform Cache</div>
+                        <div class="form-hint" id="storage-wave-size">0 KB</div>
+                      </div>
+                      <button class="btn" id="btn-clear-wave-cache">Clear</button>
+                    </div>
+                    <div class="storage-row">
+                      <div>
+                        <div style="font-weight:500;">Transcription Cache</div>
+                        <div class="form-hint" id="storage-trans-size">0 KB</div>
+                      </div>
+                      <button class="btn" id="btn-clear-trans-cache">Clear</button>
+                    </div>
+                  </div>
+                  <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;">
+                    <span class="form-hint" id="storage-total-size">Total cache: 0 KB</span>
+                    <button class="btn" id="btn-clear-all-cache" style="color:var(--status-error);border-color:rgba(229,79,79,0.3);">Clear All Caches</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn" id="btn-cancel-settings">Cancel</button>
+            <button class="btn primary" id="btn-save-settings">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Home Modal (Project Hub) -->
+      <div class="modal-backdrop" id="home-modal-backdrop">
+        <div class="modal-dialog home-modal-dialog">
+          <div class="modal-header">
+            <div class="modal-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              <span>Project Hub</span>
+            </div>
+            <button class="modal-close-btn" id="btn-close-home">&times;</button>
+          </div>
+          <div class="home-modal-body">
+            <!-- Welcome Hero -->
+            <div class="home-hero">
+              <div class="home-hero-text">
+                <h2>Welcome to Clawvinci</h2>
+                <p>The AI-native NLE for Windows. Edit multi-track timelines, generate media, and pair with AI agents through local Model Context Protocol.</p>
+              </div>
+              <div class="home-quick-actions">
+                <button class="btn primary" id="btn-home-new-proj">+ New Project</button>
+                <button class="btn" id="btn-home-open-proj">Open Existing (.palmier)</button>
+                <button class="btn" id="btn-home-start-tour">Take Guided Tour</button>
+              </div>
+            </div>
+
+            <!-- Sample Projects -->
+            <div class="home-section">
+              <div class="home-section-header">
+                <h4 data-i18n="Sample Projects">Sample Projects</h4>
+                <span class="form-hint">Explore multi-track timelines with audio, titles, and effects</span>
+              </div>
+              <div class="sample-cards-grid">
+                <div class="sample-card" data-sample="action-trailer">
+                  <div class="sample-card-thumb" style="background: linear-gradient(135deg, #1d5878, #111);">🎬</div>
+                  <div class="sample-card-info">
+                    <div class="sample-card-title">Cinematic Action Trailer</div>
+                    <div class="sample-card-meta">4K 30fps · 3 Tracks · Transitions</div>
+                  </div>
+                </div>
+                <div class="sample-card" data-sample="podcast-cutdown">
+                  <div class="sample-card-thumb" style="background: linear-gradient(135deg, #2e7765, #111);">🎙️</div>
+                  <div class="sample-card-info">
+                    <div class="sample-card-title">Podcast Split &amp; Cutdown</div>
+                    <div class="sample-card-meta">1080p 24fps · Multi-mic · Transcripts</div>
+                  </div>
+                </div>
+                <div class="sample-card" data-sample="vlog-highlight">
+                  <div class="sample-card-thumb" style="background: linear-gradient(135deg, #715486, #111);">✨</div>
+                  <div class="sample-card-info">
+                    <div class="sample-card-title">Vertical Social Reel</div>
+                    <div class="sample-card-meta">1080x1920 60fps · Dynamic Titles</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Projects -->
+            <div class="home-section">
+              <div class="home-section-header">
+                <h4 data-i18n="Recent Projects">Recent Projects</h4>
+                <span class="form-hint">Stored on your local device</span>
+              </div>
+              <div class="recent-projects-list" id="home-recent-list">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help Modal -->
+      <div class="modal-backdrop" id="help-modal-backdrop">
+        <div class="modal-dialog help-modal-dialog">
+          <div class="modal-header">
+            <div class="modal-title">
+              <span>Help &amp; Documentation</span>
+            </div>
+            <button class="modal-close-btn" id="btn-close-help">&times;</button>
+          </div>
+          <div class="modal-tabs">
+            <button class="modal-tab-btn active" data-help-tab="tab-help-shortcuts">Keyboard Shortcuts</button>
+            <button class="modal-tab-btn" data-help-tab="tab-help-mcp">MCP Setup Guide (Windows)</button>
+            <button class="modal-tab-btn" data-help-tab="tab-help-tour">Interactive Tour</button>
+            <button class="modal-tab-btn" data-help-tab="tab-help-feedback">Feedback</button>
+          </div>
+          <div class="modal-body">
+            <!-- Shortcuts Tab -->
+            <div class="help-tab-content active" id="tab-help-shortcuts">
+              <div class="shortcuts-grid-layout">
+                <div class="shortcut-group">
+                  <h5>Playback &amp; Navigation</h5>
+                  <div class="shortcut-row"><span class="shortcut-desc">Play / Pause</span><kbd>Space</kbd></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Step Frame Backward / Forward</span><div><kbd>←</kbd> <kbd>→</kbd></div></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Skip 1 Second</span><div><kbd>Shift</kbd>+<kbd>←</kbd> / <kbd>→</kbd></div></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Shuttle Reverse / Pause / Forward</span><div><kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd></div></div>
+                </div>
+                <div class="shortcut-group">
+                  <h5>Editing Tools</h5>
+                  <div class="shortcut-row"><span class="shortcut-desc">Split at Playhead (Razor)</span><div><kbd>S</kbd> or <kbd>C</kbd> or <kbd>Ctrl</kbd>+<kbd>K</kbd></div></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Ripple Delete Selected</span><div><kbd>Delete</kbd> / <kbd>Backspace</kbd></div></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Trim Start to Playhead</span><div><kbd>Q</kbd> or <kbd>[</kbd></div></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Trim End to Playhead</span><div><kbd>W</kbd> or <kbd>]</kbd></div></div>
+                </div>
+                <div class="shortcut-group">
+                  <h5>History &amp; Clipboard</h5>
+                  <div class="shortcut-row"><span class="shortcut-desc">Undo</span><div><kbd>Ctrl</kbd>+<kbd>Z</kbd></div></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Redo</span><div><kbd>Ctrl</kbd>+<kbd>Y</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></div></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Cut / Copy / Paste</span><div><kbd>Ctrl</kbd>+<kbd>X</kbd>/<kbd>C</kbd>/<kbd>V</kbd></div></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Select All Clips</span><div><kbd>Ctrl</kbd>+<kbd>A</kbd></div></div>
+                </div>
+                <div class="shortcut-group">
+                  <h5>Project &amp; Export</h5>
+                  <div class="shortcut-row"><span class="shortcut-desc">Open Project</span><div><kbd>Ctrl</kbd>+<kbd>O</kbd></div></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Save Project</span><div><kbd>Ctrl</kbd>+<kbd>S</kbd></div></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Export Timeline / Render</span><div><kbd>Ctrl</kbd>+<kbd>E</kbd></div></div>
+                  <div class="shortcut-row"><span class="shortcut-desc">Import Media Files</span><div><kbd>Ctrl</kbd>+<kbd>I</kbd></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MCP Setup Guide Tab -->
+            <div class="help-tab-content" id="tab-help-mcp">
+              <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
+                Connect external AI agents to Clawvinci via HTTP SSE at <code>http://127.0.0.1:19789/mcp</code>.
+              </p>
+
+              <div class="mcp-agent-item">
+                <div class="mcp-agent-header">
+                  <strong>1. Claude Desktop (Windows)</strong>
+                  <button class="btn btn-copy-mcp" data-copy="claude-desktop">Copy Config JSON</button>
+                </div>
+                <div class="form-hint" style="margin-bottom:6px;">Add this entry to <code>%APPDATA%\Claude\claude_desktop_config.json</code>:</div>
+                <pre class="code-box"><code>{
+  "mcpServers": {
+    "clawvinci": {
+      "type": "http",
+      "url": "http://127.0.0.1:19789/mcp"
+    }
+  }
+}</code></pre>
+              </div>
+
+              <div class="mcp-agent-item">
+                <div class="mcp-agent-header">
+                  <strong>2. Cursor IDE</strong>
+                  <button class="btn btn-copy-mcp" data-copy="cursor">Copy Config JSON</button>
+                </div>
+                <div class="form-hint" style="margin-bottom:6px;">Add this to <code>%USERPROFILE%\.cursor\mcp.json</code>:</div>
+                <pre class="code-box"><code>{
+  "mcpServers": {
+    "clawvinci": {
+      "type": "http",
+      "url": "http://127.0.0.1:19789/mcp"
+    }
+  }
+}</code></pre>
+              </div>
+
+              <div class="mcp-agent-item">
+                <div class="mcp-agent-header">
+                  <strong>3. Claude Code CLI</strong>
+                  <button class="btn btn-copy-mcp" data-copy="claude-code">Copy Command</button>
+                </div>
+                <div class="form-hint" style="margin-bottom:6px;">Run this command in PowerShell:</div>
+                <pre class="code-box"><code>claude mcp add --transport http clawvinci http://127.0.0.1:19789/mcp</code></pre>
+              </div>
+
+              <div class="mcp-agent-item">
+                <div class="mcp-agent-header">
+                  <strong>4. Codex CLI</strong>
+                  <button class="btn btn-copy-mcp" data-copy="codex">Copy Command</button>
+                </div>
+                <div class="form-hint" style="margin-bottom:6px;">Run this command in PowerShell:</div>
+                <pre class="code-box"><code>codex mcp add clawvinci --url http://127.0.0.1:19789/mcp</code></pre>
+              </div>
+            </div>
+
+            <!-- Tour Tab -->
+            <div class="help-tab-content" id="tab-help-tour">
+              <div style="text-align:center;padding:32px 16px;">
+                <div style="font-size:32px;margin-bottom:12px;">🚀</div>
+                <h3 style="margin-bottom:8px;">Workspace Interactive Tour</h3>
+                <p style="font-size:12px;color:var(--text-secondary);max-width:440px;margin:0 auto 20px auto;">
+                  Take a 5-step guided walkthrough of Clawvinci: Media Panel, Real-time Preview Canvas, Multi-track Timeline, Inspector, and the Embedded MCP Agent.
+                </p>
+                <button class="btn primary" id="btn-launch-tour-from-help">Launch Spotlight Tour</button>
+              </div>
+            </div>
+
+            <!-- Feedback Tab -->
+            <div class="help-tab-content" id="tab-help-feedback">
+              <div class="settings-section">
+                <h4>Community Feedback &amp; Issue Reporting</h4>
+                <p class="form-hint">Clawvinci is open source (GPLv3). We welcome feature requests, bug reports, and UX feedback on GitHub.</p>
+                <div class="form-row">
+                  <label class="form-label">Subject / Feedback Title</label>
+                  <input type="text" class="form-input" id="feedback-subject" placeholder="e.g. Add support for VST3 audio plugins" />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Feedback Details</label>
+                  <textarea class="form-input" id="feedback-body" rows="4" placeholder="Describe what you experienced or what feature you'd like to see..."></textarea>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+                  <button class="btn primary" id="btn-open-github-issue">Create GitHub Issue &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spotlight Tour Overlay -->
+      <div class="tour-backdrop" id="tour-modal-backdrop">
+        <div class="tour-card" id="tour-card">
+          <div class="tour-step-badge" id="tour-step-counter">Step 1 of 5</div>
+          <div class="tour-step-title" id="tour-step-title">Media Panel</div>
+          <div class="tour-step-desc" id="tour-step-desc">Import videos, audio, images, or AI-generated clips. Drag and drop directly onto the timeline tracks.</div>
+          <div class="tour-step-actions">
+            <button class="btn" id="btn-tour-skip">Skip</button>
+            <div style="display:flex;gap:6px;">
+              <button class="btn" id="btn-tour-prev">Back</button>
+              <button class="btn primary" id="btn-tour-next">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- First-Run Onboarding Modal -->
+      <div class="modal-backdrop" id="onboarding-modal-backdrop">
+        <div class="modal-dialog onboarding-modal-dialog">
+          <div class="onboarding-content">
+            <!-- Step 1: Welcome -->
+            <div class="onboarding-step active" id="onboard-step-1">
+              <div class="onboard-icon">🎬</div>
+              <h2>Welcome to Clawvinci</h2>
+              <p>The "Cursor IDE" for Video Editing. An AI-native, multi-track editor with an embedded 53-tool MCP server designed for human-AI creative collaboration.</p>
+              <div class="onboard-features">
+                <div class="onboard-feat-item">⚡ Native 60fps GPU preview via Direct3D12/WGPU</div>
+                <div class="onboard-feat-item">🤖 Control timeline from Claude Desktop, Cursor, or Codex</div>
+                <div class="onboard-feat-item">🔒 Strictly BYOK &amp; Local: zero telemetry, zero cloud accounts</div>
+              </div>
+            </div>
+
+            <!-- Step 2: Experience -->
+            <div class="onboarding-step" id="onboard-step-2">
+              <h2>Editing Experience</h2>
+              <p>Select your background to tailor default shortcuts and track density:</p>
+              <div class="onboard-options-grid">
+                <div class="onboard-option selected" data-pref="nle-pro">
+                  <strong>Pro NLE User</strong>
+                  <span>Premiere / Final Cut / DaVinci Resolve veteran</span>
+                </div>
+                <div class="onboard-option" data-pref="creator">
+                  <strong>Content Creator</strong>
+                  <span>YouTube, TikTok, podcasts &amp; social clips</span>
+                </div>
+                <div class="onboard-option" data-pref="ai-engineer">
+                  <strong>AI Engineer / Agentic User</strong>
+                  <span>Primarily automating video editing with LLMs &amp; MCP</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: AI Setup -->
+            <div class="onboarding-step" id="onboard-step-3">
+              <h2>AI Model Setup</h2>
+              <p>Choose how speech transcription and generative AI should operate:</p>
+              <div class="onboard-options-grid">
+                <div class="onboard-option selected" data-ai="local">
+                  <strong>On-Device Local Whisper</strong>
+                  <span>Runs locally on your CPU/DirectML. 100% private, no API key needed.</span>
+                </div>
+                <div class="onboard-option" data-ai="byok">
+                  <strong>Bring Your Own Key (BYOK)</strong>
+                  <span>Use your own OpenAI / Fal / Kling API keys for maximum speed and models.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Ready -->
+            <div class="onboarding-step" id="onboard-step-4">
+              <div class="onboard-icon">✨</div>
+              <h2>You're All Set!</h2>
+              <p>The timeline is initialized and the MCP server is listening on port <code>19789</code>. Let's create your first masterpiece.</p>
+            </div>
+
+            <div class="onboarding-footer">
+              <div class="onboarding-dots">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn" id="btn-onboard-skip">Skip</button>
+                <button class="btn primary" id="btn-onboard-next">Next &rarr;</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Status Footer -->
       <footer>
         <div class="footer-status">
@@ -1084,6 +1657,7 @@
       import { TimelineEngine } from './timeline.js';
       import { InspectorPanel } from './inspector.js';
       import { MediaPanel } from './media_panel.js';
+      import { AVAILABLE_LANGUAGES, initLanguage, setLanguage, getLanguage, t, updateDomTranslations } from './i18n.js';
 
       const canvas = document.getElementById('preview-canvas');
       const ctx = canvas.getContext('2d');
@@ -1644,9 +2218,576 @@
         }
       });
 
+      // ==========================================
+      // Settings Modal Logic
+      // ==========================================
+      const btnSettings = document.getElementById('btn-settings');
+      const settingsModalBackdrop = document.getElementById('settings-modal-backdrop');
+      const btnCloseSettings = document.getElementById('btn-close-settings');
+      const btnCancelSettings = document.getElementById('btn-cancel-settings');
+      const btnSaveSettings = document.getElementById('btn-save-settings');
+      const btnGotoMcpGuide = document.getElementById('btn-goto-mcp-guide');
+      const settingsNavBtns = document.querySelectorAll('[data-settings-tab]');
+      const settingsPanes = document.querySelectorAll('.settings-tab-pane');
+      const settingLanguage = document.getElementById('setting-language');
+      const settingDefaultFps = document.getElementById('setting-default-fps');
+      const settingTheme = document.getElementById('setting-theme');
+      const btnSettingsCheckUpdate = document.getElementById('btn-settings-check-update');
+      const settingsUpdaterStatus = document.getElementById('settings-updater-status');
+
+      const byokOpenai = document.getElementById('byok-openai');
+      const byokKlingAk = document.getElementById('byok-kling-ak');
+      const byokKlingSk = document.getElementById('byok-kling-sk');
+      const byokFal = document.getElementById('byok-fal');
+      const byokElevenlabs = document.getElementById('byok-elevenlabs');
+      const byokSuno = document.getElementById('byok-suno');
+      const byokAnthropic = document.getElementById('byok-anthropic');
+      const settingWhisperMode = document.getElementById('setting-whisper-mode');
+      const settingWhisperSize = document.getElementById('setting-whisper-size');
+
+      const colorClipVideo = document.getElementById('color-clip-video');
+      const colorClipAudio = document.getElementById('color-clip-audio');
+      const colorClipText = document.getElementById('color-clip-text');
+      const colorClipImage = document.getElementById('color-clip-image');
+
+      const storageThumbSize = document.getElementById('storage-thumb-size');
+      const storageWaveSize = document.getElementById('storage-wave-size');
+      const storageTransSize = document.getElementById('storage-trans-size');
+      const storageTotalSize = document.getElementById('storage-total-size');
+      const btnClearThumbCache = document.getElementById('btn-clear-thumb-cache');
+      const btnClearWaveCache = document.getElementById('btn-clear-wave-cache');
+      const btnClearTransCache = document.getElementById('btn-clear-trans-cache');
+      const btnClearAllCache = document.getElementById('btn-clear-all-cache');
+
+      let currentAppSettings = null;
+
+      function populateLanguageDropdown() {
+        if (!settingLanguage) return;
+        settingLanguage.innerHTML = AVAILABLE_LANGUAGES.map((l) => {
+          return `<option value="${l.code}">${l.nativeName} (${l.name})</option>`;
+        }).join('');
+        settingLanguage.value = getLanguage();
+      }
+
+      async function refreshStorageStats() {
+        try {
+          const info = await invoke('storage_get_info');
+          if (info) {
+            const formatBytes = (b) => {
+              if (b < 1024) return b + ' B';
+              if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+              return (b / (1024 * 1024)).toFixed(1) + ' MB';
+            };
+            if (storageThumbSize) storageThumbSize.textContent = formatBytes(info.thumbnailCacheBytes);
+            if (storageWaveSize) storageWaveSize.textContent = formatBytes(info.waveformCacheBytes);
+            if (storageTransSize) storageTransSize.textContent = formatBytes(info.transcriptCacheBytes);
+            if (storageTotalSize) storageTotalSize.textContent = 'Total cache: ' + formatBytes(info.totalCacheBytes);
+          }
+        } catch (e) {
+          console.warn('Storage info error:', e);
+        }
+      }
+
+      async function openSettingsModal() {
+        populateLanguageDropdown();
+        try {
+          currentAppSettings = await invoke('settings_get');
+          if (currentAppSettings) {
+            if (settingLanguage) settingLanguage.value = currentAppSettings.language || 'en';
+            if (settingDefaultFps) settingDefaultFps.value = String(currentAppSettings.defaultFrameRate || 30);
+            if (settingTheme) settingTheme.value = currentAppSettings.theme || 'dark';
+
+            const keys = currentAppSettings.byokKeys || {};
+            if (byokOpenai) byokOpenai.value = keys.openai || '';
+            if (byokKlingAk) byokKlingAk.value = keys.kling_ak || '';
+            if (byokKlingSk) byokKlingSk.value = keys.kling_sk || '';
+            if (byokFal) byokFal.value = keys.fal || '';
+            if (byokElevenlabs) byokElevenlabs.value = keys.elevenlabs || '';
+            if (byokSuno) byokSuno.value = keys.suno || '';
+            if (byokAnthropic) byokAnthropic.value = keys.anthropic || '';
+
+            const w = currentAppSettings.whisperConfig || {};
+            if (settingWhisperMode) settingWhisperMode.value = w.mode || 'auto';
+            if (settingWhisperSize) settingWhisperSize.value = w.modelSize || 'base';
+
+            const c = currentAppSettings.trackColors || {};
+            if (colorClipVideo) colorClipVideo.value = c.video || '#1d5878';
+            if (colorClipAudio) colorClipAudio.value = c.audio || '#2e7765';
+            if (colorClipText) colorClipText.value = c.text || '#546e7a';
+            if (colorClipImage) colorClipImage.value = c.image || '#715486';
+          }
+        } catch (e) {
+          console.warn('Settings load error:', e);
+        }
+        refreshStorageStats();
+        settingsModalBackdrop.classList.add('open');
+      }
+
+      function closeSettingsModal() {
+        settingsModalBackdrop.classList.remove('open');
+      }
+
+      if (btnSettings) btnSettings.addEventListener('click', openSettingsModal);
+      if (btnCloseSettings) btnCloseSettings.addEventListener('click', closeSettingsModal);
+      if (btnCancelSettings) btnCancelSettings.addEventListener('click', closeSettingsModal);
+
+      settingsNavBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          settingsNavBtns.forEach((b) => b.classList.remove('active'));
+          settingsPanes.forEach((p) => p.classList.remove('active'));
+          btn.classList.add('active');
+          const targetId = btn.dataset.settingsTab;
+          const targetPane = document.getElementById(targetId);
+          if (targetPane) targetPane.classList.add('active');
+        });
+      });
+
+      document.querySelectorAll('.toggle-mask').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const target = document.getElementById(btn.dataset.target);
+          if (target) {
+            target.type = target.type === 'password' ? 'text' : 'password';
+            btn.textContent = target.type === 'password' ? '👁' : '🔒';
+          }
+        });
+      });
+
+      if (btnSaveSettings) {
+        btnSaveSettings.addEventListener('click', async () => {
+          try {
+            const updated = {
+              language: settingLanguage.value,
+              defaultFrameRate: parseFloat(settingDefaultFps.value) || 30.0,
+              theme: settingTheme.value,
+              trackColors: {
+                video: colorClipVideo.value,
+                audio: colorClipAudio.value,
+                text: colorClipText.value,
+                image: colorClipImage.value,
+              },
+              byokKeys: {
+                openai: byokOpenai.value.trim(),
+                kling_ak: byokKlingAk.value.trim(),
+                kling_sk: byokKlingSk.value.trim(),
+                fal: byokFal.value.trim(),
+                elevenlabs: byokElevenlabs.value.trim(),
+                suno: byokSuno.value.trim(),
+                anthropic: byokAnthropic.value.trim(),
+              },
+              whisperConfig: {
+                mode: settingWhisperMode.value,
+                endpoint: null,
+                modelSize: settingWhisperSize.value,
+                device: 'cpu',
+              },
+              recentProjects: currentAppSettings ? currentAppSettings.recentProjects : [],
+              onboardingCompleted: true,
+            };
+
+            await invoke('settings_update', { settings: updated });
+
+            document.documentElement.style.setProperty('--clip-video', updated.trackColors.video);
+            document.documentElement.style.setProperty('--clip-audio', updated.trackColors.audio);
+            document.documentElement.style.setProperty('--clip-text', updated.trackColors.text);
+            document.documentElement.style.setProperty('--clip-image', updated.trackColors.image);
+
+            setLanguage(updated.language);
+            closeSettingsModal();
+          } catch (e) {
+            alert('Failed to save settings: ' + e);
+          }
+        });
+      }
+
+      if (btnSettingsCheckUpdate) {
+        btnSettingsCheckUpdate.addEventListener('click', async () => {
+          btnSettingsCheckUpdate.disabled = true;
+          settingsUpdaterStatus.textContent = 'Checking...';
+          try {
+            const res = await invoke('app_check_for_updates');
+            if (res && res.available) {
+              settingsUpdaterStatus.textContent = `Update available: v${res.latestVersion}`;
+              alert(`Update available: v${res.latestVersion}`);
+            } else {
+              settingsUpdaterStatus.textContent = 'You are on the latest version (v0.1.0)';
+            }
+          } catch (e) {
+            settingsUpdaterStatus.textContent = 'Update check failed: ' + e;
+          } finally {
+            btnSettingsCheckUpdate.disabled = false;
+          }
+        });
+      }
+
+      if (btnClearThumbCache) {
+        btnClearThumbCache.addEventListener('click', async () => {
+          await invoke('storage_clear_cache', { cacheType: 'thumbnails' });
+          refreshStorageStats();
+        });
+      }
+      if (btnClearWaveCache) {
+        btnClearWaveCache.addEventListener('click', async () => {
+          await invoke('storage_clear_cache', { cacheType: 'waveforms' });
+          refreshStorageStats();
+        });
+      }
+      if (btnClearTransCache) {
+        btnClearTransCache.addEventListener('click', async () => {
+          await invoke('storage_clear_cache', { cacheType: 'transcripts' });
+          refreshStorageStats();
+        });
+      }
+      if (btnClearAllCache) {
+        btnClearAllCache.addEventListener('click', async () => {
+          if (confirm('Clear all local thumbnail, waveform, and transcription caches?')) {
+            await invoke('storage_clear_cache', { cacheType: 'all' });
+            refreshStorageStats();
+          }
+        });
+      }
+
+      if (btnGotoMcpGuide) {
+        btnGotoMcpGuide.addEventListener('click', () => {
+          closeSettingsModal();
+          openHelpModal('tab-help-mcp');
+        });
+      }
+
+      // ==========================================
+      // Home Hub (Projects) Logic
+      // ==========================================
+      const btnHome = document.getElementById('btn-home');
+      const brandHomeTrigger = document.getElementById('brand-home-trigger');
+      const homeModalBackdrop = document.getElementById('home-modal-backdrop');
+      const btnCloseHome = document.getElementById('btn-close-home');
+      const btnHomeNewProj = document.getElementById('btn-home-new-proj');
+      const btnHomeOpenProj = document.getElementById('btn-home-open-proj');
+      const btnHomeStartTour = document.getElementById('btn-home-start-tour');
+      const homeRecentList = document.getElementById('home-recent-list');
+      const headerProjectName = document.getElementById('header-project-name');
+
+      async function openHomeModal() {
+        try {
+          const list = await invoke('project_recent_list');
+          if (homeRecentList) {
+            if (!list || list.length === 0) {
+              homeRecentList.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:16px;text-align:center;">No recent projects yet. Create a new project to get started!</div>';
+            } else {
+              homeRecentList.innerHTML = list.map((p) => {
+                const durMin = Math.floor(p.durationSeconds / 60);
+                const durSec = Math.floor(p.durationSeconds % 60);
+                return `
+                  <div class="recent-project-row" data-path="${p.path}" data-name="${p.name}">
+                    <div>
+                      <div class="recent-project-title">${p.name}</div>
+                      <div class="recent-project-meta">${p.path} · ${durMin}m ${durSec}s</div>
+                    </div>
+                    <button class="btn" style="font-size:10px;padding:2px 8px;">Open</button>
+                  </div>
+                `;
+              }).join('');
+
+              homeRecentList.querySelectorAll('.recent-project-row').forEach((row) => {
+                row.addEventListener('click', () => {
+                  const name = row.dataset.name;
+                  if (headerProjectName) headerProjectName.textContent = name;
+                  closeHomeModal();
+                });
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('Recent list error:', e);
+        }
+        homeModalBackdrop.classList.add('open');
+      }
+
+      function closeHomeModal() {
+        homeModalBackdrop.classList.remove('open');
+      }
+
+      if (btnHome) btnHome.addEventListener('click', openHomeModal);
+      if (brandHomeTrigger) brandHomeTrigger.addEventListener('click', openHomeModal);
+      if (btnCloseHome) btnCloseHome.addEventListener('click', closeHomeModal);
+
+      if (btnHomeNewProj) {
+        btnHomeNewProj.addEventListener('click', async () => {
+          const name = prompt('Enter project name:', 'New Timeline');
+          if (!name) return;
+          try {
+            const tl = await invoke('project_create', {
+              payload: { name, fps: 30, width: 1920, height: 1080 },
+            });
+            if (tl) {
+              updateTimelineState(tl);
+              if (headerProjectName) headerProjectName.textContent = name;
+              closeHomeModal();
+            }
+          } catch (e) {
+            alert('Failed to create project: ' + e);
+          }
+        });
+      }
+
+      if (btnHomeOpenProj) {
+        btnHomeOpenProj.addEventListener('click', () => {
+          alert('Select a .palmier directory or project package on your system.');
+        });
+      }
+
+      document.querySelectorAll('.sample-card[data-sample]').forEach((card) => {
+        card.addEventListener('click', async () => {
+          const title = card.querySelector('.sample-card-title')?.textContent || 'Sample Project';
+          if (headerProjectName) headerProjectName.textContent = title;
+          closeHomeModal();
+        });
+      });
+
+      if (btnHomeStartTour) {
+        btnHomeStartTour.addEventListener('click', () => {
+          closeHomeModal();
+          startTour();
+        });
+      }
+
+      // ==========================================
+      // Help Modal Logic
+      // ==========================================
+      const btnHelp = document.getElementById('btn-help');
+      const helpModalBackdrop = document.getElementById('help-modal-backdrop');
+      const btnCloseHelp = document.getElementById('btn-close-help');
+      const helpTabBtns = document.querySelectorAll('[data-help-tab]');
+      const helpTabContents = document.querySelectorAll('.help-tab-content');
+      const btnLaunchTourFromHelp = document.getElementById('btn-launch-tour-from-help');
+      const btnOpenGithubIssue = document.getElementById('btn-open-github-issue');
+
+      function openHelpModal(tabId = 'tab-help-shortcuts') {
+        helpModalBackdrop.classList.add('open');
+        helpTabBtns.forEach((b) => {
+          b.classList.toggle('active', b.dataset.helpTab === tabId);
+        });
+        helpTabContents.forEach((c) => {
+          c.classList.toggle('active', c.id === tabId);
+        });
+      }
+
+      function closeHelpModal() {
+        helpModalBackdrop.classList.remove('open');
+      }
+
+      if (btnHelp) btnHelp.addEventListener('click', () => openHelpModal('tab-help-shortcuts'));
+      if (btnCloseHelp) btnCloseHelp.addEventListener('click', closeHelpModal);
+
+      helpTabBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          helpTabBtns.forEach((b) => b.classList.remove('active'));
+          helpTabContents.forEach((c) => c.classList.remove('active'));
+          btn.classList.add('active');
+          const target = document.getElementById(btn.dataset.helpTab);
+          if (target) target.classList.add('active');
+        });
+      });
+
+      document.querySelectorAll('.btn-copy-mcp').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const type = btn.dataset.copy;
+          let textToCopy = '';
+          if (type === 'claude-desktop') {
+            textToCopy = JSON.stringify({
+              mcpServers: {
+                clawvinci: {
+                  type: 'http',
+                  url: 'http://127.0.0.1:19789/mcp',
+                },
+              },
+            }, null, 2);
+          } else if (type === 'cursor') {
+            textToCopy = JSON.stringify({
+              mcpServers: {
+                clawvinci: {
+                  type: 'http',
+                  url: 'http://127.0.0.1:19789/mcp',
+                },
+              },
+            }, null, 2);
+          } else if (type === 'claude-code') {
+            textToCopy = 'claude mcp add --transport http clawvinci http://127.0.0.1:19789/mcp';
+          } else if (type === 'codex') {
+            textToCopy = 'codex mcp add clawvinci --url http://127.0.0.1:19789/mcp';
+          }
+
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(textToCopy);
+            const orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = orig; }, 1500);
+          }
+        });
+      });
+
+      if (btnLaunchTourFromHelp) {
+        btnLaunchTourFromHelp.addEventListener('click', () => {
+          closeHelpModal();
+          startTour();
+        });
+      }
+
+      if (btnOpenGithubIssue) {
+        btnOpenGithubIssue.addEventListener('click', () => {
+          const subject = encodeURIComponent(document.getElementById('feedback-subject').value || 'Clawvinci User Feedback');
+          const body = encodeURIComponent(document.getElementById('feedback-body').value || '');
+          window.open(`https://github.com/HasNetwork/Clawvinci/issues/new?title=${subject}&body=${body}`, '_blank');
+        });
+      }
+
+      // ==========================================
+      // Interactive Tour Logic
+      // ==========================================
+      const tourModalBackdrop = document.getElementById('tour-modal-backdrop');
+      const tourStepCounter = document.getElementById('tour-step-counter');
+      const tourStepTitle = document.getElementById('tour-step-title');
+      const tourStepDesc = document.getElementById('tour-step-desc');
+      const btnTourSkip = document.getElementById('btn-tour-skip');
+      const btnTourPrev = document.getElementById('btn-tour-prev');
+      const btnTourNext = document.getElementById('btn-tour-next');
+
+      const tourSteps = [
+        {
+          title: 'Media Panel',
+          desc: 'Import video, audio, and image assets, or inspect AI-generated media ready to be dropped into tracks.',
+        },
+        {
+          title: 'Real-Time GPU Viewport',
+          desc: 'Hardware-accelerated 60fps preview canvas powered by Direct3D12 and WGPU.',
+        },
+        {
+          title: 'Multi-Track Timeline',
+          desc: 'Frame-accurate timeline canvas with ripple trimming, razor splits, and audio scrubbing.',
+        },
+        {
+          title: 'Inspector & Effects',
+          desc: 'Precision positioning, text formatting, and GPU-accelerated video effects.',
+        },
+        {
+          title: 'Embedded MCP Server',
+          desc: 'External AI agents like Cursor, Claude Desktop, or Codex connect directly to edit this timeline on port 19789.',
+        },
+      ];
+
+      let tourCurrentStep = 0;
+
+      function renderTourStep() {
+        const step = tourSteps[tourCurrentStep];
+        tourStepCounter.textContent = `Step ${tourCurrentStep + 1} of ${tourSteps.length}`;
+        tourStepTitle.textContent = step.title;
+        tourStepDesc.textContent = step.desc;
+        btnTourPrev.style.display = tourCurrentStep === 0 ? 'none' : 'inline-flex';
+        btnTourNext.textContent = tourCurrentStep === tourSteps.length - 1 ? 'Finish' : 'Next';
+      }
+
+      function startTour() {
+        tourCurrentStep = 0;
+        renderTourStep();
+        tourModalBackdrop.classList.add('open');
+      }
+
+      function closeTour() {
+        tourModalBackdrop.classList.remove('open');
+      }
+
+      if (btnTourSkip) btnTourSkip.addEventListener('click', closeTour);
+      if (btnTourPrev) {
+        btnTourPrev.addEventListener('click', () => {
+          if (tourCurrentStep > 0) {
+            tourCurrentStep--;
+            renderTourStep();
+          }
+        });
+      }
+      if (btnTourNext) {
+        btnTourNext.addEventListener('click', () => {
+          if (tourCurrentStep < tourSteps.length - 1) {
+            tourCurrentStep++;
+            renderTourStep();
+          } else {
+            closeTour();
+          }
+        });
+      }
+
+      // ==========================================
+      // First-Run Onboarding Logic
+      // ==========================================
+      const onboardingModalBackdrop = document.getElementById('onboarding-modal-backdrop');
+      const btnOnboardSkip = document.getElementById('btn-onboard-skip');
+      const btnOnboardNext = document.getElementById('btn-onboard-next');
+      const onboardSteps = document.querySelectorAll('.onboarding-step');
+      const onboardDots = document.querySelectorAll('.onboarding-dots .dot');
+      let onboardStepIndex = 0;
+
+      function updateOnboardUI() {
+        onboardSteps.forEach((s, idx) => s.classList.toggle('active', idx === onboardStepIndex));
+        onboardDots.forEach((d, idx) => d.classList.toggle('active', idx === onboardStepIndex));
+        btnOnboardNext.textContent = onboardStepIndex === onboardSteps.length - 1 ? 'Start Editing ✨' : 'Next →';
+      }
+
+      function openOnboarding() {
+        onboardStepIndex = 0;
+        updateOnboardUI();
+        onboardingModalBackdrop.classList.add('open');
+      }
+
+      async function completeOnboarding() {
+        onboardingModalBackdrop.classList.remove('open');
+        try {
+          const settings = await invoke('settings_get');
+          if (settings) {
+            settings.onboardingCompleted = true;
+            await invoke('settings_update', { settings });
+          }
+        } catch (e) {
+          console.warn('Save onboarding error:', e);
+        }
+      }
+
+      if (btnOnboardSkip) btnOnboardSkip.addEventListener('click', completeOnboarding);
+      if (btnOnboardNext) {
+        btnOnboardNext.addEventListener('click', async () => {
+          if (onboardStepIndex < onboardSteps.length - 1) {
+            onboardStepIndex++;
+            updateOnboardUI();
+          } else {
+            await completeOnboarding();
+          }
+        });
+      }
+
+      document.querySelectorAll('.onboard-option').forEach((opt) => {
+        opt.addEventListener('click', () => {
+          const parent = opt.parentElement;
+          parent.querySelectorAll('.onboard-option').forEach((o) => o.classList.remove('selected'));
+          opt.classList.add('selected');
+        });
+      });
+
       // Initial Bootstrap
       async function init() {
         try {
+          const appSettings = await invoke('settings_get');
+          if (appSettings) {
+            currentAppSettings = appSettings;
+            initLanguage(appSettings.language);
+            if (appSettings.trackColors) {
+              document.documentElement.style.setProperty('--clip-video', appSettings.trackColors.video);
+              document.documentElement.style.setProperty('--clip-audio', appSettings.trackColors.audio);
+              document.documentElement.style.setProperty('--clip-text', appSettings.trackColors.text);
+              document.documentElement.style.setProperty('--clip-image', appSettings.trackColors.image);
+            }
+            if (!appSettings.onboardingCompleted) {
+              openOnboarding();
+            }
+          }
+
           const tl = await invoke('timeline_get');
           if (tl) {
             updateTimelineState(tl);

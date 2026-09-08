@@ -33,6 +33,12 @@ use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
+pub mod settings;
+use settings::{
+    clear_cache, get_storage_info, load_settings, record_recent_project, save_settings,
+    AppSettings, RecentProjectDto, StorageInfoDto,
+};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MediaItemDto {
@@ -921,6 +927,71 @@ async fn app_check_for_updates(app: tauri::AppHandle) -> Result<UpdateCheckResul
     }
 }
 
+#[tauri::command]
+async fn settings_get() -> Result<AppSettings, String> {
+    Ok(load_settings())
+}
+
+#[tauri::command]
+async fn settings_update(settings: AppSettings) -> Result<AppSettings, String> {
+    save_settings(&settings)?;
+    Ok(settings)
+}
+
+#[tauri::command]
+async fn storage_get_info() -> Result<StorageInfoDto, String> {
+    Ok(get_storage_info())
+}
+
+#[tauri::command]
+async fn storage_clear_cache(cache_type: String) -> Result<(), String> {
+    clear_cache(&cache_type)
+}
+
+#[tauri::command]
+async fn project_recent_list() -> Result<Vec<RecentProjectDto>, String> {
+    let settings = load_settings();
+    Ok(settings.recent_projects)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectCreatePayload {
+    pub name: String,
+    pub fps: Option<u32>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+}
+
+#[tauri::command]
+async fn project_create(
+    payload: ProjectCreatePayload,
+    state: tauri::State<'_, SharedState>,
+) -> Result<Timeline, String> {
+    let fps = payload.fps.unwrap_or(30);
+    let width = payload.width.unwrap_or(1920);
+    let height = payload.height.unwrap_or(1080);
+    let new_tl = Timeline::new(fps, width, height);
+
+    {
+        let mut app = state.lock().await;
+        app.editor = TimelineEditor::new(new_tl.clone());
+        app.engine = PlaybackEngine::new(new_tl.clone());
+        app.media_items.clear();
+    }
+
+    let recent = RecentProjectDto {
+        id: Uuid::new_v4().to_string(),
+        name: payload.name,
+        path: format!("local://{}", Uuid::new_v4()),
+        last_opened: chrono::Utc::now().to_rfc3339(),
+        duration_seconds: 0.0,
+    };
+    let _ = record_recent_project(recent);
+
+    Ok(new_tl)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut timeline = Timeline::new(30, 1920, 1080);
@@ -1080,6 +1151,12 @@ pub fn run() {
             agent_chat_clear,
             mcp_server_status,
             app_check_for_updates,
+            settings_get,
+            settings_update,
+            storage_get_info,
+            storage_clear_cache,
+            project_recent_list,
+            project_create,
         ])
         .setup(|_app| Ok(()))
         .run(tauri::generate_context!())
