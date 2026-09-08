@@ -123,7 +123,7 @@ pub fn generate_video(args: &Value, state: &mut McpState) -> ToolResult {
 
     let item = McpMediaItem {
         id: media_id.clone(),
-        name: format!("Generated: {}", &prompt.chars().take(24).collect::<String>()),
+        name: format!("Generated: {}", prompt.chars().take(24).collect::<String>()),
         path: format!("media/{filename}"),
         media_type: "video".to_string(),
         duration_seconds: duration,
@@ -169,7 +169,7 @@ pub fn generate_image(args: &Value, state: &mut McpState) -> ToolResult {
 
     let item = McpMediaItem {
         id: media_id.clone(),
-        name: format!("Generated: {}", &prompt.chars().take(24).collect::<String>()),
+        name: format!("Generated: {}", prompt.chars().take(24).collect::<String>()),
         path: format!("media/{filename}"),
         media_type: "image".to_string(),
         duration_seconds: 4.0,
@@ -219,7 +219,7 @@ pub fn generate_audio(args: &Value, state: &mut McpState) -> ToolResult {
 
     let item = McpMediaItem {
         id: media_id.clone(),
-        name: format!("Audio: {}", &prompt.chars().take(24).collect::<String>()),
+        name: format!("Audio: {}", prompt.chars().take(24).collect::<String>()),
         path: format!("media/{filename}"),
         media_type: "audio".to_string(),
         duration_seconds: duration,
