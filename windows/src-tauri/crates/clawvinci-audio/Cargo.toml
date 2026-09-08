@@ -9,6 +9,7 @@ description = "Phase 9: Beat detection, silence detection, audio analysis"
 clawvinci-model = { path = "../clawvinci-model" }
 clawvinci-media = { path = "../clawvinci-media" }
 serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true

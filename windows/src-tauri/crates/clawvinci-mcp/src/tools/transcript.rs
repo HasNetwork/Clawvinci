@@ -4,6 +4,8 @@
 
 use crate::result::ToolResult;
 use crate::state::McpState;
+use clawvinci_audio::beats::{estimate_bpm, BeatAnalysis};
+use clawvinci_audio::silence::SilenceRemovalSettings;
 use serde_json::{json, Value};
 
 pub fn get_transcript(args: &Value, _state: &mut McpState) -> ToolResult {
@@ -39,10 +41,22 @@ pub fn remove_words(args: &Value, state: &mut McpState) -> ToolResult {
 
 pub fn remove_silence(args: &Value, state: &mut McpState) -> ToolResult {
     let min_pause = args.get("minimumPauseSeconds").and_then(|v| v.as_f64()).unwrap_or(0.5);
+    let speech_padding = args.get("speechPaddingSeconds").and_then(|v| v.as_f64()).unwrap_or(0.15);
+
+    let settings = match SilenceRemovalSettings::new(min_pause, speech_padding) {
+        Some(s) => s,
+        None => {
+            return ToolResult::error(
+                "Invalid silence removal settings: minimumPauseSeconds (0.25..=3.0), speechPaddingSeconds (0.0..=0.5)",
+            )
+        }
+    };
+
     state.bump_version();
     ToolResult::json(&json!({
         "cutCount": 0,
-        "minimumPauseSeconds": min_pause,
+        "minimumPauseSeconds": settings.minimum_pause_seconds,
+        "speechPaddingSeconds": settings.speech_padding_seconds,
         "freedSeconds": 0.0
     }))
 }
@@ -53,11 +67,16 @@ pub fn detect_beats(args: &Value, state: &mut McpState) -> ToolResult {
         None => return ToolResult::error("Missing required parameter 'mediaRef'"),
     };
 
+    let sample_beats = vec![0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+    let bpm = estimate_bpm(&sample_beats).unwrap_or(120.0);
+    let analysis = BeatAnalysis::new(bpm, sample_beats, vec![0.5, 2.5]);
+
     state.bump_version();
     ToolResult::json(&json!({
         "mediaRef": media_ref,
-        "bpm": 120.0,
-        "beatCount": 16,
-        "beatsSeconds": [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+        "bpm": analysis.bpm,
+        "beatCount": analysis.beats.len(),
+        "beatsSeconds": analysis.beats,
+        "downbeatsSeconds": analysis.downbeats
     }))
 }

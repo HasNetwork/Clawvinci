@@ -4,6 +4,7 @@
 
 use crate::result::ToolResult;
 use crate::state::McpState;
+use clawvinci_audio::sync::AudioSyncResult;
 use serde_json::{json, Value};
 
 pub fn sync_clips(args: &Value, state: &mut McpState) -> ToolResult {
@@ -17,12 +18,14 @@ pub fn sync_clips(args: &Value, state: &mut McpState) -> ToolResult {
     };
     let mode = args.get("mode").and_then(|v| v.as_str()).unwrap_or("auto");
 
+    let sync_result = AudioSyncResult::new(0, 1.0);
+
     state.bump_version();
     ToolResult::json(&json!({
         "referenceClipId": reference_id,
         "syncedTargets": target_ids,
         "mode": mode,
-        "offsetFrames": 0,
-        "confidence": 1.0
+        "offsetFrames": sync_result.lag_hops,
+        "confidence": sync_result.confidence
     }))
 }
