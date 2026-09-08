@@ -3,9 +3,9 @@
 > **Document Purpose**: Authoritative orientation and implementation manual for the incoming AI agent / engineering team.  
 > **Workspace Root**: `d:\projects\palmier-win\.claude\worktrees\plan-windows-port`  
 > **Current Git Branch**: `worktree-plan-windows-port`  
-> **Last Clean Commit**: `bade440`  
-> **CI Verification Status**: ✅ **100% Green** on GitHub Actions Run `34192487829` (Check, Clippy, Test, Tauri Build & Artifact Upload)  
-> **Active Target Milestone**: **Phase 10.0 — Search & Transcription (`clawvinci-search`)**
+> **Last Clean Commit**: `c2b1955`  
+> **CI Verification Status**: ✅ **100% Green** on GitHub Actions Run `34195654610` (Check, Clippy, Test, Tauri Build & Artifact Upload)  
+> **Active Target Milestone**: **Phase 11.0 — Generative AI Integration (`clawvinci-gen`)**
 
 ---
 
@@ -74,8 +74,8 @@ All future agents working on this codebase **must strictly abide by these rules*
 | **7.0** | `clawvinci-export` | Batch video render-to-file, FCPXML 1.10–1.14 export, Premiere XMEML 4 export, self-contained `.palmier` bundle export, export queue. | ✅ CI Green (`7-0-export.md`, Run `34102735695`) |
 | **8.0** | `clawvinci-mcp` | 52-tool MCP execution engine, embedded HTTP/SSE MCP server on `127.0.0.1:19789/mcp`, in-app agent chat orchestration. | ✅ CI Green (`8-0-mcp-agent-layer.md`, Run `34151682590`) |
 | **9.0** | `clawvinci-audio` | Audio analysis engine: Envelopes, real-time metering, cross-correlation sync, silence/dead-air planner, beat/tempo detector, VAD. | ✅ CI Green (`9-0-audio-analysis.md`, Run `34192487829`) |
-| **10.0** | `clawvinci-search` | **CURRENT TARGET**: Semantic visual search (SigLIP2 / embeddings), transcript search, indexing. | 🚀 **Ready for Implementation** (`10-0-search-transcription-ml.md`) |
-| **11.0** | `clawvinci-gen` | Generative AI integration (speech synthesis, image generation, music). | 📋 Planned (`11-0-generative-ai.md`) |
+| **10.0** | `clawvinci-search` | Semantic visual search (SigLIP2 / PALMEMB1 binary embeddings), transcript search, word cut planner. | ✅ CI Green (`10-0-search-transcription.md`, Run `34195654610`) |
+| **11.0** | `clawvinci-gen` | **CURRENT TARGET**: Generative AI integration (speech synthesis, image generation, music). | 🚀 **Ready for Implementation** (`11-0-generative-ai.md`) |
 | **12.0** | `clawvinci` (Tauri) | Auth, backend telemetry, auto-updater. | 📋 Planned (`12-0-auth-backend-telemetry-updater.md`) |
 | **13.0** | Entire app | Production polish, performance profiling, final documentation. | 📋 Planned (`13-0-polish.md`) |
 

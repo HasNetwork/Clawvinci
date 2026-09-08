@@ -15,9 +15,10 @@ immediately after that subphase's commit.
 | 7 | 7.0 | Export engine: Batch render-to-file, FCPXML 1.10–1.14, Premiere XMEML 4, project bundle packager, export queue, UI modal | [`7-0-export.md`](HISTORY/7-0-export.md) |
 | 8 | 8.0 | MCP agent layer: 52-tool execution engine, embedded HTTP/SSE server (port 19789), in-app chat orchestrator, Tauri IPC | [`8-0-mcp-agent-layer.md`](HISTORY/8-0-mcp-agent-layer.md) |
 | 9 | 9.0 | Audio analysis engine: Envelopes, real-time metering, cross-correlation sync, silence/dead-air planner, beat/tempo detector, VAD | [`9-0-audio-analysis.md`](HISTORY/9-0-audio-analysis.md) |
+| 10 | 10.0 | Search & transcription: SigLIP2 visual search (PALMEMB1 binary store), transcript search, word cut planner | [`10-0-search-transcription.md`](HISTORY/10-0-search-transcription.md) |
 
 ## Handover & Continuation
 
-- **Completed Milestone**: Phase 9.0 (Audio Analysis Engine — `clawvinci-audio`) implemented, tested, and integrated. Verified 100% green on CI Run `34192487829`.
-- **Next Active Target**: **Phase 10.0 — Search & Transcription (`clawvinci-search`)**.
+- **Completed Milestone**: Phase 10.0 (Search & Transcription Engine — `clawvinci-search`) implemented, tested, and integrated. Verified 100% green on CI Run `34195654610`.
+- **Next Active Target**: **Phase 11.0 — Generative AI Integration (`clawvinci-gen`)**.
 
