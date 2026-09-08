@@ -3,8 +3,8 @@
 > **Document Purpose**: Authoritative orientation and implementation manual for the incoming AI agent / engineering team.  
 > **Workspace Root**: `d:\projects\palmier-win\.claude\worktrees\plan-windows-port`  
 > **Current Git Branch**: `worktree-plan-windows-port`  
-> **Last Clean Commit**: `44796a7`  
-> **CI Verification Status**: ✅ **100% Green**  
+> **Last Clean Commit**: `d41711f`  
+> **CI Verification Status**: ✅ **100% Green** (GitHub Actions Run `34219245633`, Artifact `clawvinci-windows-x64`)  
 > **Completed Milestones**: **Phases 0.0 through 13.0 — Complete native Windows Port of Palmier Pro** (Full feature parity, zero telemetry, strictly BYOK/local, embedded 53-tool MCP server, 28-locale i18n, persistent settings, Home hub, onboarding, Windows-native shortcuts and setup guides)
 
 ---
@@ -60,7 +60,7 @@ All incoming agents working on this codebase **must strictly abide by these rule
 
 ---
 
-## 3. Current Implementation Status (Phases 0 – 11 Complete)
+## 3. Current Implementation Status (Phases 0.0 – 13.0 Complete)
 
 | Phase | Module / Crate | Scope & Deliverables | Verification Status |
 |---|---|---|---|
@@ -76,184 +76,73 @@ All incoming agents working on this codebase **must strictly abide by these rule
 | **9.0** | `clawvinci-audio` | Audio analysis engine: Envelopes, real-time metering, cross-correlation sync, silence/dead-air planner, beat/tempo detector, VAD. | ✅ CI Green (`9-0-audio-analysis.md`, Run `34192487829`) |
 | **10.0** | `clawvinci-search` | Semantic visual search (SigLIP2 / `PALMEMB1` binary embeddings), transcript search, word cut planner. | ✅ CI Green (`10-0-search-transcription.md`, Run `34195654610`) |
 | **11.0** | `clawvinci-gen` | Generative AI provider catalog, submissions, edit clients, preprocessing, timeline insertion, and MCP tools. | ✅ CI Green (`11-0-generative-ai.md`, Run `34208682487`) |
-| **13.0** | `clawvinci` (Tauri + Web) | **Phase 13.0 Completed**: Polish — 28-locale i18n subsystem, persistent settings & storage backend, BYOK models pane, Home hub & onboarding, Windows shortcuts & MCP setup guide. | ✅ **Implemented & CI Verified** (`13-0-polish.md`) |
+| **12.0** | `clawvinci` (Cleanup) | **Decision 10 Compliance**: Purged `api.palmier.io`, OpenAI BYOK Whisper + local transcription engine, ByokGenerationBackend, Tauri v2 updater. | ✅ CI Green (`12-0-auth-backend-telemetry-updater.md`, Run `34216896609`) |
+| **13.0** | `clawvinci` (Tauri + Web) | **Phase 13.0 Polish**: 28-locale i18n catalog, persistent settings & storage backend, BYOK models pane, Home hub & onboarding, Windows shortcuts & MCP setup guide. | ✅ **100% CI Green** (`13-0-polish.md`, Run `34219245633`) |
 
 ---
 
-## 4. Phase 11.0 — Generative AI Integration (`clawvinci-gen`) Detailed Execution Blueprint
+## 4. Architecture & Subsystem Summary (100% Completed)
 
-The incoming team's assignment is to implement **Phase 11.0 (`clawvinci-gen`)**.
+Clawvinci represents a complete, ground-up rewrite of Palmier Pro for Windows 10/11:
 
-### 4.1 Architecture & Mental Model
-Unlike Phases 9 and 10 which involved on-device DSP and vector search, **Phase 11.0 is primarily a REST API client, catalog, and preprocessing engine**:
-1. **No local ML model inference**: All generation providers (Seedance, Kling, Nano Banana Pro, Suno, ElevenLabs, etc.) are remote cloud services.
-2. **Preprocessing Pipeline**: Prepares source video/audio from the timeline before submitting to generative APIs (trimming, format conversion, audio extraction) using `clawvinci-media`.
-3. **Two-Way Timeline Integration**:
-   - When generation starts: creates placeholder `MediaAsset` items with status `Generating` and inserts placeholder clips on the timeline.
-   - When generation finishes: downloads generated media into the project's `.palmier` bundle, probes duration/resolution via `clawvinci-media`, updates asset status to `Ready`, and replaces or inserts clips on the timeline.
-4. **Agent MCP Integration**: Exposes generation to external agents via `generate_speech`, `generate_image`, and `generate_music`.
+1. **Domain Model (`clawvinci-model`)**:
+   - 21 domain models matching Palmier Pro (`Timeline`, `Track`, `Clip`, `Timecode`, `ProjectFile`).
+   - Byte-compatible `.palmier` package serialization + legacy format fallback.
+2. **Media Engine (`clawvinci-media`)**:
+   - High-performance FFmpeg-backed probe, decode, encode, and waveform generation.
+   - Bounded concurrency with safe memory limits.
+3. **Timeline Editing Core (`clawvinci-timeline`)**:
+   - `TimelineEditor` with symmetrical command pattern for undo/redo history.
+   - Ripple, overwrite, split, trim, and slide editing primitives.
+4. **Playback & Rendering (`clawvinci-render`)**:
+   - `FramePlan` builder, shared CPU compositor with blend modes and transforms.
+   - Real-time `PlaybackEngine` clock synchronization and frame stepping.
+5. **Effects Pipeline (`clawvinci-render`)**:
+   - 12 GPU/CPU shader kernels ported from Metal shaders to Rust.
+   - `EffectRegistry`, 3D `.cube` LUT parser with tetrahedral interpolation, `fontdue` kinetic text animator.
+6. **UI Shell (`windows/src` & Tauri v2)**:
+   - Modern dark design system (`AppTheme`), Canvas-based multi-track timeline, inspector, media panel.
+7. **Export Engine (`clawvinci-export`)**:
+   - Render-to-file, FCPXML 1.10–1.14 export, Premiere XMEML 4 export, self-contained `.palmier` bundle export, export queue.
+8. **Embedded MCP Server (`clawvinci-mcp`)**:
+   - Embedded HTTP/SSE server on `127.0.0.1:19789/mcp`.
+   - 53 registered tools allowing external AI agents (Claude Desktop, Cursor, Codex) to read and edit the timeline directly.
+   - In-app agent chat orchestration.
+9. **Audio Analysis Engine (`clawvinci-audio`)**:
+   - Real-time peak/RMS metering, cross-correlation audio sync, silence/dead-air detection, tempo/beat detector, VAD.
+10. **Semantic Search & Transcription (`clawvinci-search`)**:
+    - SigLIP2 visual search with `PALMEMB1` binary vector store, transcript search, cut planner.
+11. **Generative AI Integration (`clawvinci-gen`)**:
+    - Direct BYOK integration for OpenAI, Kling, Seedance, Fal, ElevenLabs, Suno; timeline insertion and preprocessing.
+12. **BYOK & Privacy Invariant (Decision 10)**:
+    - Zero telemetry, no cloud backend, no account/Clerk dependency. On-device local Whisper & BYOK OpenAI Whisper.
+13. **Polish & Desktop Experience (Phase 13.0)**:
+    - 28-locale client-side i18n system (`windows/src/i18n.js`).
+    - Persistent settings (`%APPDATA%/Clawvinci/settings.json`) & storage cache management.
+    - Home project hub with sample templates & 4-step onboarding wizard.
+    - Windows-native shortcuts & 1-click MCP setup guide for Claude Desktop, Cursor, Claude Code, and Codex.
 
 ---
 
-### 4.2 Source Inventory Reference
-Reference source directory: `Sources/PalmierPro/Generation/` (6,880 LOC across 36 files):
+## 5. Build, Packaging & CI Operations
 
-| Swift Source Directory / File | LOC | Role in Palmier Pro | Target in `clawvinci-gen` |
-|---|---|---|---|
-| `GenerationService.swift` | 743 | Top-level job lifecycle orchestrator (placeholders, reference prep, submission, polling, timeline insertion). | `src/service.rs` |
-| `GenerationBackend.swift` | 120 | Backend API client for generation jobs (Convex actions / REST endpoints). | `src/backend.rs` |
-| `Catalog/ModelCatalog.swift` | 328 | Central model registry (`ModelKind`: Video, Image, Audio, Upscale). | `src/catalog/models.rs` |
-| `Catalog/VideoModelConfig.swift` | 248 | Video generation model configs, supported aspect ratios, durations. | `src/catalog/video.rs` |
-| `Catalog/ImageModelConfig.swift` | 135 | Image generation model configs, resolutions, aspect ratios. | `src/catalog/image.rs` |
-| `Catalog/AudioModelConfig.swift` | 191 | Speech & voice generation configs (voices, styles, sample rates). | `src/catalog/audio.rs` |
-| `Catalog/UpscaleModelConfig.swift` | 145 | Video upscaling / enhancement model configs. | `src/catalog/upscale.rs` |
-| `Catalog/CostEstimator.swift` | 217 | Credit cost estimation per model, duration, quality, and resolution. | `src/catalog/cost.rs` |
-| `Catalog/ModelPreferences.swift` | 40 | User default model preferences per modality. | `src/catalog/preferences.rs` |
-| `Submission/VideoGenerationSubmission.swift` | 429 | Constructs provider-specific JSON payloads for video models. | `src/submission/video.rs` |
-| `Submission/ImageGenerationSubmission.swift` | 75 | Constructs payloads for image generation models. | `src/submission/image.rs` |
-| `Submission/AudioGenerationSubmission.swift` | 162 | Constructs payloads for speech synthesis / TTS models. | `src/submission/audio.rs` |
-| `Submission/MusicGenerationSubmission.swift` | 95 | Constructs payloads for music / instrumental generation models. | `src/submission/music.rs` |
-| `Edit/EditAction.swift` & `EditSubmitter*.swift` | ~700 | AI-driven timeline transforms (upscaling, re-voicing, audio transformation). | `src/edit/mod.rs` |
-| `Preprocessing/VideoPreprocessor.swift` | 160 | Coordinates video source prep (resizing, codec compatibility). | `src/preprocessing/video.rs` |
-| `Preprocessing/VideoTrimExtractor.swift` | 110 | Trims source clip ranges via FFmpeg for generation references. | `src/preprocessing/trim.rs` |
-| `Preprocessing/AudioTrackExtractor.swift` | 65 | Extracts audio tracks to WAV for audio-to-video / speech transforms. | `src/preprocessing/audio.rs` |
-| `Preprocessing/ImageConverter.swift` | 48 | Converts image formats and downsamples reference images. | `src/preprocessing/image.rs` |
+All compilation, linting, and testing are performed remotely via GitHub Actions:
 
----
+```powershell
+# 1. Trigger remote CI via Git Push
+git add windows/ .agents/
+git commit -m "feat: description"
+git push origin worktree-plan-windows-port
 
-### 4.3 Data Contracts & Catalog Models
+# 2. Monitor CI Run
+gh run list --limit 3
+gh run watch <RUN_ID>
 
-#### 1. Catalog Models (`src/catalog/`)
-```rust
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ModelModality {
-    Video,
-    Image,
-    Audio,
-    Music,
-    Upscale,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ModelCatalogEntry {
-    pub id: String,
-    pub display_name: String,
-    pub modality: ModelModality,
-    pub provider: String,
-    pub default_cost: u32,
-    pub supported_aspect_ratios: Vec<String>,
-    pub supported_durations: Vec<f64>,
-}
+# 3. Inspect Artifacts
+gh run view <RUN_ID>
 ```
 
-#### 2. Cost Estimator (`src/catalog/cost.rs`)
-Calculates required credits before submission:
-```rust
-pub struct CostEstimator;
-impl CostEstimator {
-    pub fn estimate_video_cost(model_id: &str, duration_seconds: f64, resolution: &str) -> u32;
-    pub fn estimate_image_cost(model_id: &str, count: usize) -> u32;
-    pub fn estimate_speech_cost(model_id: &str, char_count: usize) -> u32;
-    pub fn estimate_music_cost(model_id: &str, duration_seconds: f64) -> u32;
-}
-```
-
-#### 3. Generation Request & Job Tracking (`src/backend.rs` & `src/service.rs`)
-```rust
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum GenerationJobStatus {
-    Queued,
-    Running,
-    Succeeded,
-    Failed,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GenerationJob {
-    pub id: String,
-    pub status: GenerationJobStatus,
-    pub progress: f64,
-    pub result_url: Option<String>,
-    pub error_message: Option<String>,
-}
-```
-
----
-
-### 4.4 Preprocessing Pipeline (`src/preprocessing/`)
-
-Preprocessing prepares local assets to be submitted as references:
-- **`trim_video_reference`**: Uses `clawvinci_media::VideoStreamReader` / FFmpeg to slice an exact frame sub-range to MP4.
-- **`extract_audio_reference`**: Extracts mono/stereo float PCM from timeline clips to WAV.
-- **`convert_image_reference`**: Standardizes reference stills to PNG/JPEG with bounded maximum resolution.
-
----
-
-### 4.5 Integration with MCP Agent Layer (`clawvinci-mcp`)
-
-The MCP tool handlers in `windows/src-tauri/crates/clawvinci-mcp/src/tools/generate.rs` (stubbed in Phase 8) will be connected directly to `clawvinci-gen`:
-1. **`list_models`**: Returns registered video, image, audio/TTS, and upscale models from `ModelCatalog`.
-2. **`generate_video`**:
-   - Inputs: `prompt`, `durationSeconds`, `model`, `aspectRatio`, `sourceVideoMediaRef`, `referenceImageMediaRefs`.
-   - Preprocesses inputs, submits job, creates placeholder, and inserts video clip on completion.
-3. **`generate_image`**:
-   - Inputs: `prompt`, `aspectRatio`, `model`, `folder`.
-   - Generates image asset, imports into package, and places on video track.
-4. **`generate_audio`**:
-   - Inputs: `prompt`, `audioType` ("speech" | "music"), `voice`, `durationSeconds`.
-   - Generates speech or soundtrack audio and places on audio track.
-5. **`upscale_media`**:
-   - Inputs: `mediaRef`, `scaleFactor`.
-   - Upscales video asset using remote upscale model.
-
----
-
-## 5. Step-by-Step Implementation Sequence for Phase 11.0
-
-The incoming team should follow this precise sequence:
-
-1. **Update `windows/src-tauri/crates/clawvinci-gen/Cargo.toml`**:
-   ```toml
-   [dependencies]
-   clawvinci-model = { path = "../clawvinci-model" }
-   clawvinci-media = { path = "../clawvinci-media" }
-   clawvinci-timeline = { path = "../clawvinci-timeline" }
-   serde.workspace = true
-   serde_json.workspace = true
-   thiserror.workspace = true
-   tokio.workspace = true
-   tracing.workspace = true
-   reqwest = { version = "0.12", features = ["json", "stream"] }
-   uuid = { workspace = true, features = ["v4"] }
-   chrono = { workspace = true }
-   ```
-2. **Implement Error Types (`src/error.rs`)**:
-   - `GenError`: `Io`, `Serialization`, `ProviderError`, `InvalidInput`, `Timeout`, `PreprocessingFailed`.
-3. **Implement Declarative Model Catalog (`src/catalog/`)**:
-   - Port `ModelCatalog`, `VideoModelConfig`, `ImageModelConfig`, `AudioModelConfig`, `CostEstimator`, and `ModelPreferences`.
-   - Provide default offline model definitions so unit tests run deterministically without internet.
-4. **Implement Submission Payload Builders (`src/submission/`)**:
-   - `video.rs`, `image.rs`, `audio.rs`, `music.rs`: serialize provider parameters matching `GenerationInput`.
-5. **Implement Preprocessing Pipeline (`src/preprocessing/`)**:
-   - Leverage `clawvinci-media` to extract clip ranges, export WAV audio tracks, and format reference stills.
-6. **Implement Backend Job Client (`src/backend.rs`)**:
-   - Job submission, status polling, and result downloading with cancellation token support.
-   - Include mock client for testing and offline development.
-7. **Implement Generation Service Orchestrator (`src/service.rs`)**:
-   - Create placeholder assets with `GenerationStatus::Generating`.
-   - Execute preprocessing, submit job, poll status, download finished file into `.palmier` bundle, probe via `clawvinci-media`, and notify completion.
-8. **Wire `clawvinci-mcp/src/tools/generate.rs`**:
-   - Connect `list_models`, `generate_video`, `generate_image`, `generate_audio`, and `upscale_media` to invoke `clawvinci-gen`.
-9. **Write Integration Tests (`tests/gen_tests.rs`)**:
-   - Test catalog lookup and cost estimations.
-   - Test submission serialization.
-   - Test preprocessing trim extraction on synthetic media.
-   - Test mock generation lifecycle from placeholder to timeline insertion.
-10. **Verify Remotely via GitHub Actions CI**:
-    - Commit and push to `worktree-plan-windows-port`.
-    - Run `gh run watch <RUN_ID>` and confirm Check, Clippy, Test, and Tauri Build are 100% Green.
-    - Write `.agents/HISTORY/11-0-generative-ai.md` and update `.agents/HISTORY.md`.
+Every CI run automatically compiles the Tauri application, executes all workspace tests, runs `cargo clippy --workspace -- -D warnings`, and packages `clawvinci-windows-x64.zip`.
 
 ---
 
