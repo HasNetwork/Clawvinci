@@ -17,9 +17,11 @@ immediately after that subphase's commit.
 | 9 | 9.0 | Audio analysis engine: Envelopes, real-time metering, cross-correlation sync, silence/dead-air planner, beat/tempo detector, VAD | [`9-0-audio-analysis.md`](HISTORY/9-0-audio-analysis.md) |
 | 10 | 10.0 | Search & transcription: SigLIP2 visual search (PALMEMB1 binary store), transcript search, word cut planner | [`10-0-search-transcription.md`](HISTORY/10-0-search-transcription.md) |
 | 11 | 11.0 | Generative AI integration: Model catalog, cost estimator, submission builders, preprocessing, service orchestrator, MCP tools | [`11-0-generative-ai.md`](HISTORY/11-0-generative-ai.md) |
+| 12 | 12.0 (plan revision) | Decision 10: no accounts/backend/telemetry — BYOK/local only. Docs-only; found and scoped a real defect (Phase 10's transcription backend calls `api.palmier.io`) for Phase 12 to fix | [`12-0-plan-revision-decision-10.md`](HISTORY/12-0-plan-revision-decision-10.md) |
 
 ## Handover & Continuation
 
 - **Completed Milestone**: Phase 11.0 (Generative AI Integration — `clawvinci-gen`) implemented, tested, and integrated. Verified 100% green on CI Run `34208682487`.
-- **Next Active Target**: **Phase 12.0 — Auth, Backend, Telemetry, and Updater (`clawvinci`)**.
+- **Plan revision**: Decision 10 (no accounts/backend/telemetry) added after Phase 11 shipped — see `12-0-plan-revision-decision-10.md`. Phase 12's scope changed from an accounts phase to a BYOK/local cleanup phase.
+- **Next Active Target**: **Phase 12.0 — BYOK/local cleanup + Updater (`clawvinci-search` fix, `clawvinci-gen` verify, `clawvinci` Tauri updater)**. Read `.agents/PLAN/12-0-auth-backend-telemetry-updater.md` in full before starting — the transcription backend fix (section 1) is a real, already-identified defect.
 
