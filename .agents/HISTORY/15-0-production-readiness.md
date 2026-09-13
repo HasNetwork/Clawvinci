@@ -1,7 +1,7 @@
 # Phase 15.0 — Production readiness: Implementation Log
 
-**Status**: 🟡 In progress — Items 1 and 6 implemented and CI-green; Items 2–5
-pending (blocked on decisions/verification that require the user).
+**Status**: 🟡 In progress — Items 1, 5, and 6 implemented; Items 2–4 pending
+(blocked on decisions/verification that require the user).
 **Plan**: `.agents/PLAN/15-0-production-readiness.md`
 **CI**: green on run **34754678806** (compile, clippy `-D warnings`, tests,
 Tauri bundle including the FFmpeg sidecar).
@@ -97,6 +97,59 @@ plan for the user:
 
 ---
 
+## Item 5 — Timeline canvas interaction polish ✅ (code) / needs manual UI check
+
+Added multi-clip rubberband selection and magnetic snapping guides to the
+Phase 6 timeline canvas.
+
+### What changed
+
+**`windows/src/timeline.js`**:
+- Multi-selection: added `selectedClipIds` (Set) alongside the existing
+  `selectedClipId` (kept as the "primary" selection that drives the inspector).
+  `isClipSelected()` highlights any clip in the set or the primary.
+- Ctrl/Cmd+click toggles a clip in the multi-selection without starting a drag.
+- Rubberband lasso: mousedown on empty track space starts a `lasso` rectangle;
+  mousemove live-updates it and highlights intersecting clips
+  (`getClipsInRect()` — track-row + frame-span overlap); mouseup finalizes the
+  selection. The lasso is drawn as a translucent blue rectangle.
+- Magnetic snapping: during a move drag, `computeSnap()` snaps the dragged
+  clip's start/end to nearby snap points — other clips' start/end frames, the
+  playhead, and frame 0 — within an 8px threshold, and draws a dashed yellow
+  vertical guide at the snap position. The move is now also previewed live
+  (clips render at their target position during the drag, which the old code
+  did not do).
+- Group move: a drag on any selected clip moves the whole selection by the same
+  snapped delta. The move set is collected at drag start; the commit emits
+  `onTimelineMutate('move', { moves: [...] })`.
+
+**`windows/src/index.html`**:
+- The `move` mutate handler now maps `params.moves` (array of
+  `{clipId, trackIndex, delta}`) to the `timeline_move_clips` invoke, which
+  already accepted a `moves` array — so single- and multi-clip moves share one
+  path.
+
+**`windows/src/app-theme.css`**: (unchanged for Item 5 — canvas is drawn on the
+`<canvas>`, not styled via CSS).
+
+### Manual verification needed (not self-certified; frontend not covered by CI)
+
+CI does not parse the timeline JS. Test plan for the user:
+1. Drag on empty timeline space → a blue rubberband appears; clips it touches
+   highlight; release selects them.
+2. Ctrl/Cmd+click clips → toggles them in/out of the selection.
+3. Drag one clip near another clip's edge / the playhead → a dashed yellow
+   guide appears and the clip snaps to it.
+4. With several clips selected, drag one → the whole group moves together and
+   snaps.
+
+### Out of scope (follow-up)
+
+Group operations on a multi-selection (delete/copy of all selected clips) are
+not wired — ripple-delete still acts on the primary selection. Item 5's DoD is
+selection + snapping guides, which this delivers; group editing is a separate
+enhancement.
+
 ## CI fix trail
 
 - `ffmpeg-version: "7.1.0"` → rejected ("Requested version is not available").
@@ -115,5 +168,3 @@ plan for the user:
   present path; needs a real GPU and interactive scrub measurement to verify.
 - **Item 4 — Real-world media stress testing**: needs real ProRes/VFR/10-bit/
   corrupt-header media and a running app.
-- **Item 5 — Canvas interaction polish**: multi-select + snapping; needs
-  interactive UI verification.

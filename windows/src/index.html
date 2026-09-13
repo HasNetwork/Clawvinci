@@ -1796,9 +1796,9 @@
           try {
             let tl = null;
             if (action === 'move') {
-              tl = await invoke('timeline_move_clips', {
-                moves: [[params.clipId, params.trackIndex, params.delta]],
-              });
+              const moves = (params.moves || []).map((m) => [m.clipId, m.trackIndex, m.delta]);
+              if (moves.length === 0) return;
+              tl = await invoke('timeline_move_clips', { moves });
             } else if (action === 'trim') {
               tl = await invoke('timeline_trim_clip', {
                 clipId: params.clipId,

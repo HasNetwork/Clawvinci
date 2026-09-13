@@ -19,7 +19,8 @@ export class TimelineEngine {
     this.minPxPerFrame = 0.2;
     this.maxPxPerFrame = 12.0;
 
-    this.selectedClipId = null;
+    this.selectedClipId = null;      // primary selection (drives the inspector)
+    this.selectedClipIds = new Set(); // full multi-selection
     this.hoveredClipId = null;
     this.trackHeight = 44;
     this.rulerHeight = 26;
@@ -27,6 +28,9 @@ export class TimelineEngine {
     // Interaction state
     this.isDraggingPlayhead = false;
     this.activeDrag = null; // { type: 'move' | 'trim-left' | 'trim-right', clipId, trackIndex, startX, startY, origStartFrame, origDuration }
+    this.lasso = null;      // { x0, y0, x1, y1 } rubberband selection rectangle
+    this.snapGuideFrame = null; // frame where a magnetic snap guide is drawn during a move
+    this.snapThresholdPx = 8;
 
     this.initEvents();
   }
@@ -213,12 +217,20 @@ export class TimelineEngine {
 
       // Render clips on track
       track.clips.forEach(clip => {
-        const clipX = clip.startFrame * this.pxPerFrame;
+        // While moving, preview the dragged (and co-selected) clips at their target position.
+        let displayStartFrame = clip.startFrame;
+        if (this.activeDrag && this.activeDrag.type === 'move' && this.activeDrag.moves) {
+          const m = this.activeDrag.moves.find(mv => mv.clipId === clip.id);
+          if (m && this.activeDrag.delta !== undefined) {
+            displayStartFrame = Math.max(0, m.origStartFrame + this.activeDrag.delta);
+          }
+        }
+        const clipX = displayStartFrame * this.pxPerFrame;
         const clipW = clip.durationFrames * this.pxPerFrame;
         const clipY = y + 4;
         const clipH = this.trackHeight - 8;
 
-        const isSelected = clip.id === this.selectedClipId;
+        const isSelected = this.isClipSelected(clip.id);
         const isHovered = clip.id === this.hoveredClipId;
 
         // Clip body color
@@ -270,6 +282,19 @@ export class TimelineEngine {
       });
     });
 
+    // Magnetic snap guide during a move drag
+    if (this.snapGuideFrame !== null) {
+      const snapX = this.snapGuideFrame * this.pxPerFrame;
+      ctx.strokeStyle = '#ffd54a';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(snapX, 0);
+      ctx.lineTo(snapX, height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     // Playhead line through tracks
     const playheadX = this.currentFrame * this.pxPerFrame;
     ctx.strokeStyle = '#ff524d';
@@ -278,6 +303,81 @@ export class TimelineEngine {
     ctx.moveTo(playheadX, 0);
     ctx.lineTo(playheadX, height);
     ctx.stroke();
+
+    // Rubberband lasso rectangle
+    if (this.lasso) {
+      const lx = Math.min(this.lasso.x0, this.lasso.x1);
+      const ly = Math.min(this.lasso.y0, this.lasso.y1);
+      const lw = Math.abs(this.lasso.x1 - this.lasso.x0);
+      const lh = Math.abs(this.lasso.y1 - this.lasso.y0);
+      ctx.fillStyle = 'rgba(74, 158, 255, 0.15)';
+      ctx.strokeStyle = 'rgba(74, 158, 255, 0.8)';
+      ctx.lineWidth = 1;
+      ctx.fillRect(lx, ly, lw, lh);
+      ctx.strokeRect(lx + 0.5, ly + 0.5, lw, lh);
+    }
+  }
+
+  isClipSelected(clipId) {
+    return clipId === this.selectedClipId || this.selectedClipIds.has(clipId);
+  }
+
+  // Clips whose track row and frame span intersect a pixel-space rectangle.
+  getClipsInRect(x0, y0, x1, y1) {
+    const result = [];
+    if (!this.timeline) return result;
+    const left = Math.min(x0, x1);
+    const right = Math.max(x0, x1);
+    const top = Math.min(y0, y1);
+    const bottom = Math.max(y0, y1);
+    this.timeline.tracks.forEach((track, trackIdx) => {
+      const trackTop = trackIdx * this.trackHeight;
+      const trackBottom = trackTop + this.trackHeight;
+      if (trackBottom < top || trackTop > bottom) return;
+      for (const clip of track.clips) {
+        const cx = clip.startFrame * this.pxPerFrame;
+        const cw = clip.durationFrames * this.pxPerFrame;
+        if (cx + cw >= left && cx <= right) {
+          result.push({ clip, trackIndex: trackIdx });
+        }
+      }
+    });
+    return result;
+  }
+
+  // Snap a candidate start frame to nearby clip edges, the playhead, or frame 0.
+  // Returns { startFrame, guideFrame } — guideFrame is null when nothing snapped.
+  computeSnap(candidateStart, durationFrames, excludeIds) {
+    const thresholdFrames = this.snapThresholdPx / this.pxPerFrame;
+    const candidateEnd = candidateStart + durationFrames;
+
+    const points = [0, this.currentFrame];
+    if (this.timeline) {
+      for (const track of this.timeline.tracks) {
+        for (const clip of track.clips) {
+          if (excludeIds.has(clip.id)) continue;
+          points.push(clip.startFrame);
+          points.push(clip.startFrame + clip.durationFrames);
+        }
+      }
+    }
+
+    let best = null; // { adjustedStart, guideFrame, dist }
+    for (const p of points) {
+      const dStart = Math.abs(candidateStart - p);
+      if (dStart <= thresholdFrames && (!best || dStart < best.dist)) {
+        best = { adjustedStart: p, guideFrame: p, dist: dStart };
+      }
+      const dEnd = Math.abs(candidateEnd - p);
+      if (dEnd <= thresholdFrames && (!best || dEnd < best.dist)) {
+        best = { adjustedStart: p - durationFrames, guideFrame: p, dist: dEnd };
+      }
+    }
+
+    if (best && best.adjustedStart >= 0) {
+      return { startFrame: best.adjustedStart, guideFrame: best.guideFrame };
+    }
+    return { startFrame: candidateStart, guideFrame: null };
   }
 
   getHitClip(mouseX, mouseY) {
@@ -326,6 +426,14 @@ export class TimelineEngine {
         this.onSeek(frame, 'interactiveScrub');
         this.renderRuler();
         this.renderTracks();
+      } else if (this.lasso) {
+        // Update rubberband rectangle
+        const rect = this.tracksCanvas.getBoundingClientRect();
+        this.lasso.x1 = e.clientX - rect.left;
+        this.lasso.y1 = e.clientY - rect.top;
+        const hits = this.getClipsInRect(this.lasso.x0, this.lasso.y0, this.lasso.x1, this.lasso.y1);
+        this.selectedClipIds = new Set(hits.map(h => h.clip.id));
+        this.renderTracks();
       } else if (this.activeDrag) {
         // Dragging / trimming clip
         const rect = this.tracksCanvas.getBoundingClientRect();
@@ -333,9 +441,14 @@ export class TimelineEngine {
         const deltaFrames = Math.round(deltaX / this.pxPerFrame);
 
         if (this.activeDrag.type === 'move') {
-          // Preview move
-          const newStart = Math.max(0, this.activeDrag.origStartFrame + deltaFrames);
-          this.activeDrag.targetStartFrame = newStart;
+          // Preview move for the primary clip, with magnetic snapping.
+          const rawStart = Math.max(0, this.activeDrag.origStartFrame + deltaFrames);
+          const excludeIds = new Set(this.activeDrag.moves.map(m => m.clipId));
+          const snap = this.computeSnap(rawStart, this.activeDrag.origDuration, excludeIds);
+          this.activeDrag.targetStartFrame = snap.startFrame;
+          this.activeDrag.delta = snap.startFrame - this.activeDrag.origStartFrame;
+          this.snapGuideFrame = snap.guideFrame;
+          this.renderTracks();
         } else if (this.activeDrag.type === 'trim-left') {
           const maxDelta = this.activeDrag.origDuration - 1;
           const clampedDelta = Math.min(maxDelta, Math.max(-this.activeDrag.origStartFrame, deltaFrames));
@@ -371,17 +484,35 @@ export class TimelineEngine {
       if (this.isDraggingPlayhead) {
         this.isDraggingPlayhead = false;
       }
+      if (this.lasso) {
+        const hits = this.getClipsInRect(this.lasso.x0, this.lasso.y0, this.lasso.x1, this.lasso.y1);
+        this.selectedClipIds = new Set(hits.map(h => h.clip.id));
+        // Primary selection = first hit (drives the inspector); null if none.
+        if (hits.length > 0) {
+          this.selectedClipId = hits[0].clip.id;
+          this.onSelectClip(hits[0].clip, hits[0].trackIndex);
+        } else {
+          this.selectedClipId = null;
+          this.onSelectClip(null, -1);
+        }
+        this.lasso = null;
+        this.renderTracks();
+        return;
+      }
       if (this.activeDrag) {
         const drag = this.activeDrag;
         this.activeDrag = null;
+        this.snapGuideFrame = null;
 
-        if (drag.type === 'move' && drag.targetStartFrame !== undefined && drag.targetStartFrame !== drag.origStartFrame) {
-          const delta = drag.targetStartFrame - drag.origStartFrame;
-          this.onTimelineMutate('move', {
-            clipId: drag.clipId,
-            trackIndex: drag.trackIndex,
-            delta,
-          });
+        if (drag.type === 'move' && drag.delta) {
+          // Move every selected clip by the same snapped delta.
+          const moves = drag.moves
+            .filter(m => m.origStartFrame + drag.delta >= 0)
+            .map(m => ({ clipId: m.clipId, trackIndex: m.trackIndex, delta: drag.delta }));
+          if (moves.length > 0) {
+            this.onTimelineMutate('move', { moves });
+          }
+          this.renderTracks();
         } else if (drag.type === 'trim-left' && drag.delta) {
           this.onTimelineMutate('trim', {
             clipId: drag.clipId,
@@ -403,9 +534,32 @@ export class TimelineEngine {
       const rect = this.tracksCanvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
+      const additive = e.ctrlKey || e.metaKey;
 
       const hit = this.getHitClip(x, y);
       if (hit) {
+        if (additive) {
+          // Ctrl/Cmd+click toggles the clip in the multi-selection (no drag).
+          if (this.selectedClipIds.has(hit.clip.id)) {
+            this.selectedClipIds.delete(hit.clip.id);
+            if (this.selectedClipId === hit.clip.id) {
+              this.selectedClipId = null;
+              this.onSelectClip(null, -1);
+            }
+          } else {
+            this.selectedClipIds.add(hit.clip.id);
+            this.selectedClipId = hit.clip.id;
+            this.onSelectClip(hit.clip, hit.trackIndex);
+          }
+          this.renderTracks();
+          return;
+        }
+
+        // Plain click: keep the selection if this clip is already part of it
+        // (so a drag moves the whole group); otherwise select just this clip.
+        if (!this.selectedClipIds.has(hit.clip.id)) {
+          this.selectedClipIds = new Set([hit.clip.id]);
+        }
         this.selectedClipId = hit.clip.id;
         this.onSelectClip(hit.clip, hit.trackIndex);
 
@@ -428,17 +582,32 @@ export class TimelineEngine {
             delta: 0,
           };
         } else {
+          // Collect every selected clip so the move applies to the whole group.
+          const moves = [];
+          this.timeline.tracks.forEach((track, trackIdx) => {
+            for (const clip of track.clips) {
+              if (this.selectedClipIds.has(clip.id)) {
+                moves.push({ clipId: clip.id, trackIndex: trackIdx, origStartFrame: clip.startFrame });
+              }
+            }
+          });
           this.activeDrag = {
             type: 'move',
             clipId: hit.clip.id,
             trackIndex: hit.trackIndex,
             startX: x,
             origStartFrame: hit.clip.startFrame,
+            origDuration: hit.clip.durationFrames,
+            moves,
+            delta: 0,
           };
         }
       } else {
+        // Empty space: clear selection and begin a rubberband lasso.
         this.selectedClipId = null;
+        this.selectedClipIds = new Set();
         this.onSelectClip(null, -1);
+        this.lasso = { x0: x, y0: y, x1: x, y1: y };
       }
       this.renderTracks();
     });
