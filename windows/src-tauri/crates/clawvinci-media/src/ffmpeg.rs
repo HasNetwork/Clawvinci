@@ -57,6 +57,22 @@ impl FfmpegContext {
     }
 
     fn find_binaries() -> MediaResult<(PathBuf, PathBuf)> {
+        let exe_ffmpeg = if cfg!(windows) { "ffmpeg.exe" } else { "ffmpeg" };
+        let exe_ffprobe = if cfg!(windows) { "ffprobe.exe" } else { "ffprobe" };
+
+        // 0. Bundled sidecar shipped next to the application executable. In the
+        //    installed app, Tauri places the FFmpeg external binaries alongside
+        //    clawvinci.exe, so a clean PC with no system FFmpeg still works.
+        if let Ok(exe) = std::env::current_exe() {
+            if let Some(dir) = exe.parent() {
+                let ffmpeg = dir.join(exe_ffmpeg);
+                let ffprobe = dir.join(exe_ffprobe);
+                if ffmpeg.is_file() && ffprobe.is_file() {
+                    return Ok((ffmpeg, ffprobe));
+                }
+            }
+        }
+
         // 1. Check explicit environment override
         if let Ok(env_path) = std::env::var("FFMPEG_PATH") {
             let p = PathBuf::from(env_path);
@@ -93,11 +109,9 @@ impl FfmpegContext {
 
         // 3. Search in system PATH
         if let Ok(path_var) = std::env::var("PATH") {
-            let exe_name_ffmpeg = if cfg!(windows) { "ffmpeg.exe" } else { "ffmpeg" };
-            let exe_name_probe = if cfg!(windows) { "ffprobe.exe" } else { "ffprobe" };
             for part in std::env::split_paths(&path_var) {
-                let ffmpeg = part.join(exe_name_ffmpeg);
-                let ffprobe = part.join(exe_name_probe);
+                let ffmpeg = part.join(exe_ffmpeg);
+                let ffprobe = part.join(exe_ffprobe);
                 if ffmpeg.is_file() && ffprobe.is_file() {
                     return Ok((ffmpeg, ffprobe));
                 }
@@ -105,9 +119,7 @@ impl FfmpegContext {
         }
 
         // Fallback: assume ffmpeg / ffprobe available in PATH
-        let ffmpeg = PathBuf::from(if cfg!(windows) { "ffmpeg.exe" } else { "ffmpeg" });
-        let ffprobe = PathBuf::from(if cfg!(windows) { "ffprobe.exe" } else { "ffprobe" });
-        Ok((ffmpeg, ffprobe))
+        Ok((PathBuf::from(exe_ffmpeg), PathBuf::from(exe_ffprobe)))
     }
 
     async fn probe_version(ffmpeg: &Path) -> MediaResult<String> {

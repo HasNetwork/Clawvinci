@@ -45,7 +45,18 @@ jobs:
       - name: Setup FFmpeg
         uses: FedericoCarboni/setup-ffmpeg@v3
         with:
-          ffmpeg-version: release
+          ffmpeg-version: "7.1.0"
+
+      - name: Bundle FFmpeg sidecar binaries
+        shell: pwsh
+        working-directory: windows/src-tauri
+        run: |
+          New-Item -ItemType Directory -Force -Path binaries | Out-Null
+          $ffmpeg = (Get-Command ffmpeg).Source
+          $ffprobe = (Get-Command ffprobe).Source
+          Copy-Item $ffmpeg "binaries/ffmpeg-x86_64-pc-windows-msvc.exe" -Force
+          Copy-Item $ffprobe "binaries/ffprobe-x86_64-pc-windows-msvc.exe" -Force
+          Get-ChildItem binaries
 
       - name: Cargo Test
         working-directory: windows/src-tauri

@@ -43,6 +43,9 @@ target/
 **/target/
 windows/src-tauri/target/
 
+# FFmpeg sidecar binaries (downloaded & bundled in CI, never committed)
+windows/src-tauri/binaries/
+
 # Node.js & Web
 node_modules/
 **/node_modules/
