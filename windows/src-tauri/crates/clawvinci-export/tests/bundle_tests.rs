@@ -97,8 +97,9 @@ async fn test_palmier_format_fixture_decode_roundtrip() {
     let mut timeline = Timeline::new(24, 3840, 2160);
     timeline.name = "Fixture Timeline".to_string();
 
-    let clip = clawvinci_model::timeline::Clip::new("asset-001", 0, 120);
-    timeline.tracks[0].clips.push(clip);
+    let mut track = clawvinci_model::timeline::Track::new(ClipType::Video);
+    track.clips.push(clawvinci_model::timeline::Clip::new("asset-001", 0, 120));
+    timeline.tracks.push(track);
 
     let project_file = ProjectFile::new(vec![timeline]);
 
