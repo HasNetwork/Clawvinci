@@ -4,7 +4,7 @@
 
 use crate::result::ToolResult;
 use crate::state::{McpMediaItem, McpState, SharedMcpState};
-use clawvinci_gen::backend::client::ByokGenerationBackend;
+use clawvinci_gen::backend::client::{ByokGenerationBackend, GenerationBackendClient};
 use clawvinci_gen::catalog::{CostEstimator, ModelCatalog, ModelModality};
 use clawvinci_gen::submission::types::{
     AudioGenerationParams, BackendGenerationParams, ImageGenerationParams, UpscaleGenerationParams,
