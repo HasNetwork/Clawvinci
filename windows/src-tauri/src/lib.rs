@@ -35,6 +35,7 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 use chrono::Utc;
 
+pub mod gpu_present;
 pub mod settings;
 use settings::{
     clear_cache, get_storage_info, load_settings, record_recent_project, save_settings,
@@ -1063,6 +1064,17 @@ async fn model_download(
     Ok(())
 }
 
+// MARK: - GPU (Phase 15 Item 3)
+
+/// Probes GPU availability and the selected backend (DX12/Vulkan/WARP).
+/// Runs on a blocking thread so wgpu's device creation never stalls the runtime.
+#[tauri::command]
+async fn gpu_probe() -> Result<gpu_present::GpuProbe, String> {
+    tokio::task::spawn_blocking(gpu_present::probe)
+        .await
+        .map_err(|e| format!("GPU probe task failed: {e}"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut timeline = Timeline::new(30, 1920, 1080);
@@ -1237,6 +1249,7 @@ pub fn run() {
             project_create,
             model_status,
             model_download,
+            gpu_probe,
         ])
         .setup(|_app| Ok(()))
         .run(tauri::generate_context!())

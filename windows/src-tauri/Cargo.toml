@@ -45,6 +45,10 @@ uuid.workspace = true
 tokio-util.workspace = true
 chrono.workspace = true
 
+# Phase 15 Item 3 — GPU present path (Stage 0: adapter/backend probe)
+wgpu = "25"
+pollster = "0.4"
+
 # Phase crates
 clawvinci-model = { path = "crates/clawvinci-model" }
 clawvinci-media = { path = "crates/clawvinci-media" }

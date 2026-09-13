@@ -1148,6 +1148,14 @@
                   </div>
                 </div>
                 <div class="settings-section">
+                  <h4>Graphics</h4>
+                  <div class="form-row">
+                    <label class="form-label">GPU Acceleration</label>
+                    <div class="form-hint" id="settings-gpu-status">Checking…</div>
+                    <span class="form-hint">GPU is used to accelerate the preview when available; the editor works without one.</span>
+                  </div>
+                </div>
+                <div class="settings-section">
                   <h4>Software Updates</h4>
                   <div class="form-row-h">
                     <div>
@@ -2346,7 +2354,21 @@
         }
         refreshStorageStats();
         refreshModelStatus();
+        refreshGpuStatus();
         settingsModalBackdrop.classList.add('open');
+      }
+
+      async function refreshGpuStatus() {
+        const el = document.getElementById('settings-gpu-status');
+        if (!el) return;
+        try {
+          const probe = await invoke('gpu_probe');
+          el.textContent = probe && probe.message ? probe.message : 'Unknown';
+          console.log('[GPU]', probe);
+        } catch (e) {
+          el.textContent = 'GPU probe unavailable — using CPU preview';
+          console.warn('GPU probe error:', e);
+        }
       }
 
       function closeSettingsModal() {
@@ -2906,6 +2928,7 @@
           }
           await syncPlaybackState();
           await renderCurrentFramePreview();
+          invoke('gpu_probe').then((p) => console.log('[GPU]', p && p.message)).catch(() => {});
         } catch (e) {
           console.warn('Initial load:', e);
         }
