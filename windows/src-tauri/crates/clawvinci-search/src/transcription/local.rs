@@ -2,18 +2,21 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Local on-device Whisper-class transcription engine.
 
-use crate::error::SearchResult;
+use crate::error::{SearchError, SearchResult};
+use crate::model_download::{download_and_verify, ModelFileDownload};
 use crate::transcription::result::{TranscriptionResult, TranscriptionSegment, TranscriptionWord};
 use crate::visual::loader::LoaderState;
 use serde::{Deserialize, Serialize};
 use std::f32::consts::PI;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
+use tracing::{error, info};
+use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
 pub const WHISPER_SAMPLE_RATE: f64 = 16000.0;
 pub const WHISPER_N_MELS: usize = 80;
 pub const WHISPER_HOP_LENGTH: usize = 160; // 10ms at 16kHz
-pub const WHISPER_N_FFT: usize = 400;     // 25ms at 16kHz
+pub const WHISPER_N_FFT: usize = 400; // 25ms at 16kHz
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WhisperModelSpec {
@@ -41,34 +44,29 @@ pub struct WhisperModelFileSpec {
     pub name: String,
     pub sha256: String,
     pub bytes: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WhisperModelManifest {
     pub model: String,
-    pub encoder: WhisperModelFileSpec,
-    pub decoder: WhisperModelFileSpec,
-    pub tokenizer: WhisperModelFileSpec,
+    pub model_file: WhisperModelFileSpec,
 }
 
 impl Default for WhisperModelManifest {
     fn default() -> Self {
         Self {
             model: "whisper-tiny.en".to_string(),
-            encoder: WhisperModelFileSpec {
-                name: "encoder_model.onnx".to_string(),
-                sha256: "b6e729a76d8b4e724699566ce009477e5d8ff68d30e3bb49635b750130db7450".to_string(),
-                bytes: 37_783_618,
-            },
-            decoder: WhisperModelFileSpec {
-                name: "decoder_model.onnx".to_string(),
-                sha256: "8e377f0a9b2447959b343dae812d4a520e50153860bb4a94ce16cfb0b00fa447".to_string(),
-                bytes: 113_558_684,
-            },
-            tokenizer: WhisperModelFileSpec {
-                name: "tokenizer.json".to_string(),
-                sha256: "679c4a0375a0ea1221b2cb8ebca30b3c66289cf49be50ec785fbcfab2075678b".to_string(),
-                bytes: 2_405_344,
+            model_file: WhisperModelFileSpec {
+                name: "ggml-tiny.en.bin".to_string(),
+                sha256: "921e4cf8b289a9a4c072e1b1e2c411e1ae2e3535a5b91ee48490e668d043b454"
+                    .to_string(),
+                bytes: 77_691_713,
+                url: Some(
+                    "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin"
+                        .to_string(),
+                ),
             },
         }
     }
@@ -144,24 +142,156 @@ pub trait LocalWhisperTranscriber: Send + Sync {
     fn transcribe(&self, samples: &[f32], sample_rate: f64) -> SearchResult<TranscriptionResult>;
 }
 
-/// Deterministic, fast, offline local transcriber for test environments and model-not-installed fallback.
-/// Uses voice activity energy detection and speech rhythm analysis to segment words with frame-accurate timestamps.
+// ---------------------------------------------------------------------------
+// Real whisper-rs transcriber using GGML models
+// ---------------------------------------------------------------------------
+
+pub struct WhisperRsTranscriber {
+    spec: WhisperModelSpec,
+    ctx: WhisperContext,
+}
+
+impl WhisperRsTranscriber {
+    pub fn load(spec: WhisperModelSpec, model_path: &Path) -> SearchResult<Self> {
+        let path_str = model_path
+            .to_str()
+            .ok_or_else(|| SearchError::ModelNotReady("Invalid model path encoding".into()))?;
+
+        let ctx = WhisperContext::new_with_params(path_str, WhisperContextParameters::default())
+            .map_err(|e| {
+                SearchError::LocalTranscriptionFailed(format!("Failed to load Whisper model: {e}"))
+            })?;
+
+        Ok(Self { spec, ctx })
+    }
+}
+
+impl LocalWhisperTranscriber for WhisperRsTranscriber {
+    fn spec(&self) -> &WhisperModelSpec {
+        &self.spec
+    }
+
+    fn transcribe(&self, samples: &[f32], sample_rate: f64) -> SearchResult<TranscriptionResult> {
+        if samples.is_empty() || sample_rate <= 0.0 {
+            return Ok(TranscriptionResult::new(
+                "",
+                Some("en".to_string()),
+                vec![],
+                vec![],
+            ));
+        }
+
+        let resampled = WhisperAudioPreprocessor::resample_to_16k(samples, sample_rate);
+
+        let mut state = self.ctx.create_state().map_err(|e| {
+            SearchError::LocalTranscriptionFailed(format!("Failed to create whisper state: {e}"))
+        })?;
+
+        let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
+        params.set_language(Some("en"));
+        params.set_print_special(false);
+        params.set_print_progress(false);
+        params.set_print_realtime(false);
+        params.set_print_timestamps(false);
+        params.set_token_timestamps(true);
+
+        state.full(params, &resampled).map_err(|e| {
+            SearchError::LocalTranscriptionFailed(format!("Whisper inference failed: {e}"))
+        })?;
+
+        let n_segments = state.full_n_segments().map_err(|e| {
+            SearchError::LocalTranscriptionFailed(format!("Failed to get segments: {e}"))
+        })?;
+
+        let mut words = Vec::new();
+        let mut segments = Vec::new();
+        let mut full_text_parts = Vec::new();
+
+        for i in 0..n_segments {
+            let text = state.full_get_segment_text_lossy(i).map_err(|e| {
+                SearchError::LocalTranscriptionFailed(format!("Failed to get segment text: {e}"))
+            })?;
+            let t0 = state.full_get_segment_t0(i).map_err(|e| {
+                SearchError::LocalTranscriptionFailed(format!("Failed to get t0: {e}"))
+            })? as f64
+                / 100.0;
+            let t1 = state.full_get_segment_t1(i).map_err(|e| {
+                SearchError::LocalTranscriptionFailed(format!("Failed to get t1: {e}"))
+            })? as f64
+                / 100.0;
+
+            let text = text.trim().to_string();
+            if text.is_empty() {
+                continue;
+            }
+
+            let n_tokens = state.full_n_tokens(i).map_err(|e| {
+                SearchError::LocalTranscriptionFailed(format!("Failed to get token count: {e}"))
+            })?;
+
+            for j in 0..n_tokens {
+                let token_text = state
+                    .full_get_token_text(i, j)
+                    .unwrap_or_default()
+                    .trim()
+                    .to_string();
+                if token_text.is_empty() || token_text.starts_with('[') {
+                    continue;
+                }
+
+                let token_data = state.full_get_token_data(i, j).map_err(|e| {
+                    SearchError::LocalTranscriptionFailed(format!(
+                        "Failed to get token data: {e}"
+                    ))
+                })?;
+
+                words.push(TranscriptionWord::new(
+                    &token_text,
+                    Some(token_data.t0 as f64 / 100.0),
+                    Some(token_data.t1 as f64 / 100.0),
+                ));
+            }
+
+            segments.push(TranscriptionSegment::new(&text, t0, t1));
+            full_text_parts.push(text);
+        }
+
+        let full_text = full_text_parts.join(" ");
+        Ok(TranscriptionResult::new(
+            full_text,
+            Some("en".to_string()),
+            words,
+            segments,
+        ))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Test-only deterministic transcriber (gated behind test-mocks feature)
+// ---------------------------------------------------------------------------
+
+/// Deterministic, fast, offline local transcriber for test environments only.
+/// Uses voice activity energy detection to segment words with frame-accurate timestamps.
+#[cfg(any(test, feature = "test-mocks"))]
 pub struct DeterministicLocalTranscriber {
     spec: WhisperModelSpec,
 }
 
+#[cfg(any(test, feature = "test-mocks"))]
 impl DeterministicLocalTranscriber {
     pub fn new(spec: WhisperModelSpec) -> Self {
         Self { spec }
     }
 }
 
+#[cfg(any(test, feature = "test-mocks"))]
 impl Default for DeterministicLocalTranscriber {
     fn default() -> Self {
         Self::new(WhisperModelSpec::default())
     }
 }
 
+#[cfg(any(test, feature = "test-mocks"))]
 impl LocalWhisperTranscriber for DeterministicLocalTranscriber {
     fn spec(&self) -> &WhisperModelSpec {
         &self.spec
@@ -169,7 +299,12 @@ impl LocalWhisperTranscriber for DeterministicLocalTranscriber {
 
     fn transcribe(&self, samples: &[f32], sample_rate: f64) -> SearchResult<TranscriptionResult> {
         if samples.is_empty() || sample_rate <= 0.0 {
-            return Ok(TranscriptionResult::new("", Some("en".to_string()), vec![], vec![]));
+            return Ok(TranscriptionResult::new(
+                "",
+                Some("en".to_string()),
+                vec![],
+                vec![],
+            ));
         }
 
         let resampled = WhisperAudioPreprocessor::resample_to_16k(samples, sample_rate);
@@ -177,7 +312,12 @@ impl LocalWhisperTranscriber for DeterministicLocalTranscriber {
         let frame_count = resampled.len() / frame_size;
 
         if frame_count == 0 {
-            return Ok(TranscriptionResult::new("", Some("en".to_string()), vec![], vec![]));
+            return Ok(TranscriptionResult::new(
+                "",
+                Some("en".to_string()),
+                vec![],
+                vec![],
+            ));
         }
 
         // Voice activity energy analysis
@@ -214,7 +354,6 @@ impl LocalWhisperTranscriber for DeterministicLocalTranscriber {
             speech_regions.push((start_sec, end_sec));
         }
 
-        // Generate synthetic speech transcription tokens corresponding to speech activity
         let words_bank = [
             "the", "video", "editor", "timeline", "audio", "track", "cut", "transition",
             "render", "export", "scene", "color", "grade", "agent", "marker", "clip",
@@ -254,23 +393,26 @@ impl LocalWhisperTranscriber for DeterministicLocalTranscriber {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Local Whisper engine (model lifecycle management)
+// ---------------------------------------------------------------------------
+
 /// Local Whisper on-device execution engine.
 pub struct LocalWhisperEngine {
     models_dir: PathBuf,
     manifest: WhisperModelManifest,
     state: RwLock<LoaderState>,
-    transcriber: RwLock<Arc<dyn LocalWhisperTranscriber>>,
+    transcriber: RwLock<Option<Arc<dyn LocalWhisperTranscriber>>>,
 }
 
 impl LocalWhisperEngine {
     pub fn new(models_dir: impl AsRef<Path>) -> Self {
         let manifest = WhisperModelManifest::default();
-        let default_transcriber = Arc::new(DeterministicLocalTranscriber::default());
         Self {
             models_dir: models_dir.as_ref().to_path_buf(),
             manifest,
             state: RwLock::new(LoaderState::Unknown),
-            transcriber: RwLock::new(default_transcriber),
+            transcriber: RwLock::new(None),
         }
     }
 
@@ -287,15 +429,25 @@ impl LocalWhisperEngine {
     }
 
     pub fn is_installed(&self) -> bool {
-        let encoder_path = self.models_dir.join(&self.manifest.encoder.name);
-        let decoder_path = self.models_dir.join(&self.manifest.decoder.name);
-        encoder_path.exists() && decoder_path.exists()
+        let model_path = self.models_dir.join(&self.manifest.model_file.name);
+        model_path.exists()
     }
 
-    /// Initializes and prepares the on-device transcription engine.
+    /// Initializes the on-device transcription engine with real whisper-rs inference.
     pub fn prepare(&self) {
         let mut s = self.state.write().unwrap();
         *s = LoaderState::Preparing;
+        drop(s);
+
+        if !self.is_installed() {
+            let mut s = self.state.write().unwrap();
+            *s = LoaderState::NotInstalled;
+            info!(
+                "Whisper model not installed at {}",
+                self.models_dir.display()
+            );
+            return;
+        }
 
         let spec = WhisperModelSpec {
             name: self.manifest.model.clone(),
@@ -305,15 +457,92 @@ impl LocalWhisperEngine {
             is_multilingual: false,
         };
 
-        // Ready the transcriber
-        let transcriber = Arc::new(DeterministicLocalTranscriber::new(spec));
-        *self.transcriber.write().unwrap() = transcriber;
-        *s = LoaderState::Ready;
+        let model_path = self.models_dir.join(&self.manifest.model_file.name);
+
+        match WhisperRsTranscriber::load(spec, &model_path) {
+            Ok(transcriber) => {
+                info!("Whisper-rs transcriber loaded successfully");
+                *self.transcriber.write().unwrap() = Some(Arc::new(transcriber));
+                *self.state.write().unwrap() = LoaderState::Ready;
+            }
+            Err(e) => {
+                error!("Failed to load Whisper model: {e}");
+                *self.state.write().unwrap() =
+                    LoaderState::Failed(format!("Whisper load failed: {e}"));
+            }
+        }
     }
 
     /// Transcribes audio samples on-device.
-    pub fn transcribe(&self, samples: &[f32], sample_rate: f64) -> SearchResult<TranscriptionResult> {
+    pub fn transcribe(
+        &self,
+        samples: &[f32],
+        sample_rate: f64,
+    ) -> SearchResult<TranscriptionResult> {
         let transcriber = self.transcriber.read().unwrap().clone();
-        transcriber.transcribe(samples, sample_rate)
+        match transcriber {
+            Some(t) => t.transcribe(samples, sample_rate),
+            None => Err(SearchError::ModelNotReady(
+                "Local Whisper engine not ready — model may not be installed".into(),
+            )),
+        }
+    }
+
+    /// Test-only: prepare the engine with a deterministic mock transcriber.
+    #[cfg(any(test, feature = "test-mocks"))]
+    pub fn prepare_with_mock(&self) {
+        let spec = WhisperModelSpec::default();
+        let transcriber = Arc::new(DeterministicLocalTranscriber::new(spec));
+        *self.transcriber.write().unwrap() = Some(transcriber);
+        *self.state.write().unwrap() = LoaderState::Ready;
+    }
+
+    /// Downloads the GGML model file for on-device Whisper inference.
+    pub async fn download(&self) {
+        {
+            let s = self.state.read().unwrap();
+            match *s {
+                LoaderState::Downloading(_) | LoaderState::Preparing | LoaderState::Ready => return,
+                _ => {}
+            }
+        }
+
+        *self.state.write().unwrap() = LoaderState::Downloading(0.0);
+
+        let url = match &self.manifest.model_file.url {
+            Some(u) => u.clone(),
+            None => {
+                *self.state.write().unwrap() = LoaderState::Failed(format!(
+                    "No download URL for {}",
+                    self.manifest.model_file.name
+                ));
+                return;
+            }
+        };
+
+        let spec = ModelFileDownload {
+            url,
+            dest: self.models_dir.join(&self.manifest.model_file.name),
+            expected_sha256: self.manifest.model_file.sha256.clone(),
+            expected_bytes: self.manifest.model_file.bytes,
+        };
+
+        let state_ref = &self.state;
+        let result = download_and_verify(&spec, |progress| {
+            *state_ref.write().unwrap() = LoaderState::Downloading(progress);
+        })
+        .await;
+
+        match result {
+            Ok(()) => {
+                info!("Whisper model downloaded successfully");
+                self.prepare();
+            }
+            Err(e) => {
+                error!("Whisper model download failed: {e}");
+                *self.state.write().unwrap() =
+                    LoaderState::Failed(format!("Download failed: {e}"));
+            }
+        }
     }
 }

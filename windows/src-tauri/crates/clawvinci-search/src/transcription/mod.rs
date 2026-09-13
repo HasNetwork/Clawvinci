@@ -15,10 +15,12 @@ pub use backend::{
     TranscriptionBackend, TranscriptionBackendConfig,
 };
 pub use cache::TranscriptCache;
+#[cfg(any(test, feature = "test-mocks"))]
+pub use local::DeterministicLocalTranscriber;
 pub use local::{
-    DeterministicLocalTranscriber, LocalWhisperEngine, LocalWhisperTranscriber,
-    WhisperAudioPreprocessor, WhisperModelFileSpec, WhisperModelManifest, WhisperModelSpec,
-    WHISPER_HOP_LENGTH, WHISPER_N_FFT, WHISPER_N_MELS, WHISPER_SAMPLE_RATE,
+    LocalWhisperEngine, LocalWhisperTranscriber, WhisperAudioPreprocessor, WhisperModelFileSpec,
+    WhisperModelManifest, WhisperModelSpec, WhisperRsTranscriber, WHISPER_HOP_LENGTH,
+    WHISPER_N_FFT, WHISPER_N_MELS, WHISPER_SAMPLE_RATE,
 };
 pub use result::{
     CutAggressiveness, TranscriptionProvider, TranscriptionResult, TranscriptionSegment,

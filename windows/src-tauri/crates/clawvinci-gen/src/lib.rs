@@ -10,9 +10,11 @@ pub mod preprocessing;
 pub mod service;
 pub mod submission;
 
+#[cfg(any(test, feature = "test-mocks"))]
+pub use backend::MockGenerationBackend;
 pub use backend::{
     BackendGenerationJob, BackendGenerationStatus, ByokGenerationBackend, ByokProviderConfig,
-    GenerationBackendClient, HttpGenerationBackend, MockGenerationBackend,
+    GenerationBackendClient, HttpGenerationBackend,
 };
 pub use catalog::{
     AudioCaps, AudioPricing, CostEstimator, ImageCaps, ModelCapabilities, ModelCatalog,

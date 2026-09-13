@@ -63,6 +63,7 @@ impl ByokProviderConfig {
 #[derive(Clone)]
 pub struct ByokGenerationBackend {
     providers: Arc<RwLock<HashMap<String, ByokProviderConfig>>>,
+    job_endpoints: Arc<RwLock<HashMap<String, (String, String)>>>,
     client: reqwest::Client,
 }
 
@@ -76,6 +77,7 @@ impl ByokGenerationBackend {
     pub fn new() -> Self {
         Self {
             providers: Arc::new(RwLock::new(HashMap::new())),
+            job_endpoints: Arc::new(RwLock::new(HashMap::new())),
             client: reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(60))
                 .build()
@@ -215,15 +217,27 @@ impl GenerationBackendClient for ByokGenerationBackend {
             .await
             .map_err(|e| GenError::Network(format!("Failed to parse response: {e}")))?;
 
-        body.get("jobId")
+        let job_id = body
+            .get("jobId")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string())
-            .ok_or_else(|| GenError::Backend("Response missing 'jobId'".to_string()))
+            .ok_or_else(|| GenError::Backend("Response missing 'jobId'".to_string()))?;
+
+        self.job_endpoints
+            .write()
+            .unwrap()
+            .insert(job_id.clone(), (provider.to_string(), base_url));
+
+        Ok(job_id)
     }
 
     async fn get_job(&self, job_id: &str) -> GenResult<BackendGenerationJob> {
-        // Look up default endpoint
-        let endpoint = Self::default_endpoint_for_provider("openai");
+        let endpoint = {
+            let jobs = self.job_endpoints.read().unwrap();
+            jobs.get(job_id)
+                .map(|(_, url)| url.clone())
+                .unwrap_or_else(|| Self::default_endpoint_for_provider("openai").to_string())
+        };
         let url = format!("{}/generations/{job_id}", endpoint.trim_end_matches('/'));
         let response = self
             .client
@@ -248,7 +262,18 @@ impl GenerationBackendClient for ByokGenerationBackend {
 
     async fn upload_reference(&self, file_path: &Path, content_type: &str) -> GenResult<String> {
         let file_bytes = tokio::fs::read(file_path).await?;
-        let endpoint = Self::default_endpoint_for_provider("openai");
+        let endpoint = {
+            let guard = self.providers.read().unwrap();
+            guard
+                .values()
+                .find(|c| c.api_key.as_ref().is_some_and(|k| !k.trim().is_empty()))
+                .map(|c| {
+                    c.endpoint
+                        .clone()
+                        .unwrap_or_else(|| Self::default_endpoint_for_provider(&c.provider).to_string())
+                })
+                .unwrap_or_else(|| Self::default_endpoint_for_provider("openai").to_string())
+        };
         let url = format!("{}/uploads/reference", endpoint.trim_end_matches('/'));
 
         let mut headers = HeaderMap::new();
@@ -508,12 +533,14 @@ impl GenerationBackendClient for HttpGenerationBackend {
 }
 
 /// In-memory mock backend client for deterministic, offline testing.
+#[cfg(any(test, feature = "test-mocks"))]
 #[derive(Clone, Default)]
 pub struct MockGenerationBackend {
     jobs: Arc<Mutex<HashMap<String, BackendGenerationJob>>>,
     upload_counter: Arc<Mutex<usize>>,
 }
 
+#[cfg(any(test, feature = "test-mocks"))]
 impl MockGenerationBackend {
     pub fn new() -> Self {
         Self {
@@ -545,6 +572,7 @@ impl MockGenerationBackend {
     }
 }
 
+#[cfg(any(test, feature = "test-mocks"))]
 impl GenerationBackendClient for MockGenerationBackend {
     async fn submit(
         &self,

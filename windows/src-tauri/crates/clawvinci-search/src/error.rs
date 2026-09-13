@@ -27,6 +27,9 @@ pub enum SearchError {
     #[error("Cloud transcription error: {0}")]
     CloudTranscriptionFailed(String),
 
+    #[error("Local transcription failed: {0}")]
+    LocalTranscriptionFailed(String),
+
     #[error("Invalid range: {0}")]
     InvalidRange(String),
 

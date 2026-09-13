@@ -4,15 +4,31 @@
 
 use crate::result::ToolResult;
 use crate::state::McpState;
+use crate::tools::generate::GenerationContext;
 use crate::tools::*;
 use serde_json::Value;
+use std::sync::Arc;
 
-#[derive(Default, Clone)]
-pub struct ToolExecutor;
+#[derive(Clone)]
+pub struct ToolExecutor {
+    gen_ctx: Option<Arc<GenerationContext>>,
+}
+
+impl Default for ToolExecutor {
+    fn default() -> Self {
+        Self { gen_ctx: None }
+    }
+}
 
 impl ToolExecutor {
     pub fn new() -> Self {
-        Self
+        Self::default()
+    }
+
+    pub fn with_generation_context(gen_ctx: Arc<GenerationContext>) -> Self {
+        Self {
+            gen_ctx: Some(gen_ctx),
+        }
     }
 
     /// Cleans up empty or null strings that some AI models pass as autofilled defaults.
@@ -100,10 +116,18 @@ impl ToolExecutor {
 
             // Generation & AI
             "list_models" => generate::list_models(&cleaned, state),
-            "generate_video" => generate::generate_video(&cleaned, state),
-            "generate_image" => generate::generate_image(&cleaned, state),
-            "generate_audio" => generate::generate_audio(&cleaned, state),
-            "upscale_media" => generate::upscale_media(&cleaned, state),
+            "generate_video" => {
+                generate::generate_video(&cleaned, state, self.gen_ctx.as_deref())
+            }
+            "generate_image" => {
+                generate::generate_image(&cleaned, state, self.gen_ctx.as_deref())
+            }
+            "generate_audio" => {
+                generate::generate_audio(&cleaned, state, self.gen_ctx.as_deref())
+            }
+            "upscale_media" => {
+                generate::upscale_media(&cleaned, state, self.gen_ctx.as_deref())
+            }
 
             // Skills & Feedback
             "send_feedback" => meta::send_feedback(&cleaned, state),

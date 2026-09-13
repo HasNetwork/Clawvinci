@@ -4,6 +4,7 @@
 
 use crate::error::SearchResult;
 use serde::{Deserialize, Serialize};
+#[cfg(any(test, feature = "test-mocks"))]
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -36,12 +37,15 @@ pub trait VisualEmbedder: Send + Sync {
     fn encode_image(&self, rgb: &[u8], width: u32, height: u32) -> SearchResult<Vec<f32>>;
 }
 
-/// A fast, deterministic L2-normalized pseudo-semantic embedder for testing and offline fallback.
+/// A fast, deterministic L2-normalized pseudo-semantic embedder for testing only.
+/// Not reachable from production code paths.
+#[cfg(any(test, feature = "test-mocks"))]
 #[derive(Debug, Clone)]
 pub struct MockVisualEmbedder {
     spec: ModelSpec,
 }
 
+#[cfg(any(test, feature = "test-mocks"))]
 impl MockVisualEmbedder {
     pub fn new(spec: ModelSpec) -> Self {
         Self { spec }
@@ -59,12 +63,14 @@ impl MockVisualEmbedder {
     }
 }
 
+#[cfg(any(test, feature = "test-mocks"))]
 impl Default for MockVisualEmbedder {
     fn default() -> Self {
         Self::new(ModelSpec::default())
     }
 }
 
+#[cfg(any(test, feature = "test-mocks"))]
 impl VisualEmbedder for MockVisualEmbedder {
     fn spec(&self) -> &ModelSpec {
         &self.spec

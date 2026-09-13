@@ -4,9 +4,8 @@
 use clawvinci_search::error::SearchError;
 use clawvinci_search::transcription::{
     DeterministicLocalTranscriber, LocalWhisperEngine, LocalWhisperTranscriber,
-    TranscriptCache, TranscriptionBackend, TranscriptionBackendConfig,
-    TranscriptionEngineMode, TranscriptionService, WhisperAudioPreprocessor,
-    WHISPER_N_MELS, WHISPER_SAMPLE_RATE,
+    TranscriptCache, TranscriptionBackend, TranscriptionBackendConfig, TranscriptionEngineMode,
+    TranscriptionService, WhisperAudioPreprocessor, WHISPER_N_MELS, WHISPER_SAMPLE_RATE,
 };
 use serde_json::json;
 use std::f32::consts::PI;
@@ -107,7 +106,7 @@ fn test_whisper_audio_preprocessor_resampling_and_mel_bins() {
 #[test]
 fn test_deterministic_local_transcriber_and_engine() {
     let engine = LocalWhisperEngine::new(std::env::temp_dir());
-    engine.prepare();
+    engine.prepare_with_mock();
     assert!(engine.is_ready());
 
     // Generate 2 seconds of pulsed synthetic audio (speech bursts)
@@ -145,7 +144,7 @@ fn test_transcription_service_cache_and_modes() {
 
     let cache = Arc::new(TranscriptCache::new(temp_dir.join("cache")));
     let local_engine = Arc::new(LocalWhisperEngine::new(temp_dir.join("models")));
-    local_engine.prepare();
+    local_engine.prepare_with_mock();
 
     let service = TranscriptionService::new(
         cache.clone(),

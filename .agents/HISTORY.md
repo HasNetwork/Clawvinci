@@ -20,11 +20,12 @@ immediately after that subphase's commit.
 | 12 | 12.0 (plan revision) | Decision 10: no accounts/backend/telemetry — BYOK/local only. Docs-only; found and scoped a real defect (Phase 10's transcription backend calls `api.palmier.io`) for Phase 12 to fix | [`12-0-plan-revision-decision-10.md`](HISTORY/12-0-plan-revision-decision-10.md) |
 | 12 | 12.0 | BYOK/local cleanup + updater: Removed api.palmier.io, OpenAI BYOK Whisper + local on-device engine, ByokGenerationBackend, Tauri v2 updater. ⚠️ **Correction (see 14.0 audit):** the "local on-device engine" is `DeterministicLocalTranscriber` — real VAD, but a hardcoded 16-word bank, not Whisper inference. | [`12-0-auth-backend-telemetry-updater.md`](HISTORY/12-0-auth-backend-telemetry-updater.md) |
 | 13 | 13.0 | Polish: 28-locale i18n subsystem, persistent settings & storage backend, BYOK models pane, Home hub & onboarding, Windows shortcuts & MCP setup guide | [`13-0-polish.md`](HISTORY/13-0-polish.md) |
-| 14 | 14.0 | 🔴 **Audit finding, not yet fixed**: independent audit found the transcription, visual-search, and generation pipelines are mocked/unwired in production despite being marked complete. Fix planned, not yet implemented | [`14-0-mock-audit-findings.md`](HISTORY/14-0-mock-audit-findings.md) |
+| 14 | 14.0 (audit) | Independent audit found transcription, visual-search, and generation pipelines mocked/unwired in production despite being marked complete | [`14-0-mock-audit-findings.md`](HISTORY/14-0-mock-audit-findings.md) |
+| 14 | 14.0 (fix) | ✅ Real SigLIP2 via ONNX Runtime, real Whisper via whisper-rs, MCP generate tools wired to ByokGenerationBackend, provider-routing bug fixed, .palmier fixture test, all mocks gated behind `#[cfg(test)]`/feature flag | [`14-0-real-ai-pipelines.md`](HISTORY/14-0-real-ai-pipelines.md) |
 
 ## Handover & Continuation
 
-- **Completed Milestone**: Phases 0.0–13.0 implemented and CI-green.
-- **Correction**: a post-completion audit found Phases 10–12's AI pipelines (local transcription, visual search, generative AI) are mocked/unwired at the production call site, not actually functional — see `HISTORY/14-0-mock-audit-findings.md`. "CI-green" and "feature parity" claims above do NOT hold for those three subsystems until Phase 14 fixes them.
-- **Next Active Target**: **Phase 14.0 — Make the AI pipelines real** (`.agents/PLAN/14-0-real-ai-pipelines.md`). Phase 15 (production readiness) is planned to follow it, not before.
+- **Completed Milestone**: Phases 0.0–14.0 implemented. Phases 0–13 CI-green; Phase 14 pending CI verification (push required).
+- **Phase 14 corrected**: the three mocked AI pipelines (local transcription, visual search, generative AI) identified by the Phase 14 audit are now wired to real implementations. All mock types are gated behind `#[cfg(any(test, feature = "test-mocks"))]` and unreachable in release builds.
+- **Next Active Target**: **Phase 15.0 — Production readiness** (`.agents/PLAN/15-0-production-readiness.md`): FFmpeg sidecar bundling, code signing, GPU swapchain, media stress testing, canvas polish.
 

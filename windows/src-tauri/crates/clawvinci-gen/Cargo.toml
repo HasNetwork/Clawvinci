@@ -5,6 +5,10 @@ edition.workspace = true
 license.workspace = true
 description = "Phase 11: Generative AI provider catalog, submission, and edit clients"
 
+[features]
+default = []
+test-mocks = []
+
 [dependencies]
 clawvinci-model = { path = "../clawvinci-model" }
 clawvinci-media = { path = "../clawvinci-media" }
@@ -21,3 +25,4 @@ reqwest = { version = "0.12", features = ["json", "stream"] }
 
 [dev-dependencies]
 tempfile = "3"
+clawvinci-gen = { path = ".", features = ["test-mocks"] }

@@ -2,12 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Derived from Sources/PalmierPro/Search/Models/VisualModelLoader.swift and SearchIndexConfig.swift (GPLv3).
 
-use crate::visual::model::{MockVisualEmbedder, ModelSpec, VisualEmbedder};
+use crate::model_download::{download_and_verify, ModelFileDownload};
+use crate::visual::model::{ModelSpec, VisualEmbedder};
+use crate::visual::onnx_embedder::OnnxVisualEmbedder;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
+use tracing::{error, info};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", content = "value")]
@@ -25,6 +28,8 @@ pub struct ModelFileSpec {
     pub name: String,
     pub sha256: String,
     pub bytes: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,6 +47,9 @@ pub struct ModelManifest {
     pub tokenizer: ModelFileSpec,
 }
 
+const SIGLIP2_HF_BASE: &str =
+    "https://huggingface.co/google/siglip2-base-patch16-256/resolve/main/onnx";
+
 impl Default for ModelManifest {
     fn default() -> Self {
         Self {
@@ -52,18 +60,27 @@ impl Default for ModelManifest {
             context_length: 64,
             image_encoder: ModelFileSpec {
                 name: "ImageEncoder.onnx".to_string(),
-                sha256: "426115f240ead5faf69b073e08dd1b959d850ca5c592537cd81886992283b2fb".to_string(),
+                sha256: "426115f240ead5faf69b073e08dd1b959d850ca5c592537cd81886992283b2fb"
+                    .to_string(),
                 bytes: 91_700_398,
+                url: Some(format!("{SIGLIP2_HF_BASE}/image_encoder.onnx")),
             },
             text_encoder: ModelFileSpec {
                 name: "TextEncoder.onnx".to_string(),
-                sha256: "48f80e35ce40a9dcdc55bef986a104d3153e1cfa78229bb45c4724f3f3427368".to_string(),
+                sha256: "48f80e35ce40a9dcdc55bef986a104d3153e1cfa78229bb45c4724f3f3427368"
+                    .to_string(),
                 bytes: 258_593_083,
+                url: Some(format!("{SIGLIP2_HF_BASE}/text_encoder.onnx")),
             },
             tokenizer: ModelFileSpec {
                 name: "tokenizer.json".to_string(),
-                sha256: "c37f2a8e8555d8561109564c4f60ee962b0072abddcfcfd599d321469d6d1ef5".to_string(),
+                sha256: "c37f2a8e8555d8561109564c4f60ee962b0072abddcfcfd599d321469d6d1ef5"
+                    .to_string(),
                 bytes: 5_460_173,
+                url: Some(
+                    "https://huggingface.co/google/siglip2-base-patch16-256/resolve/main/tokenizer.json"
+                        .to_string(),
+                ),
             },
         }
     }
@@ -87,6 +104,14 @@ impl VisualModelLoader {
             enabled: AtomicBool::new(true),
             embedder: RwLock::new(None),
         }
+    }
+
+    pub fn models_dir(&self) -> &PathBuf {
+        &self.models_dir
+    }
+
+    pub fn manifest(&self) -> &ModelManifest {
+        &self.manifest
     }
 
     pub fn state(&self) -> LoaderState {
@@ -119,10 +144,10 @@ impl VisualModelLoader {
     pub fn is_installed(&self) -> bool {
         let image_path = self.models_dir.join(&self.manifest.image_encoder.name);
         let text_path = self.models_dir.join(&self.manifest.text_encoder.name);
-        image_path.exists() && text_path.exists()
+        let tok_path = self.models_dir.join(&self.manifest.tokenizer.name);
+        image_path.exists() && text_path.exists() && tok_path.exists()
     }
 
-    /// Prepares and loads the model if installed, or initializes fallback mock embedder.
     pub fn prepare(&self) {
         if !self.enabled() {
             return;
@@ -130,6 +155,14 @@ impl VisualModelLoader {
 
         let mut s = self.state.write().unwrap();
         *s = LoaderState::Preparing;
+        drop(s);
+
+        if !self.is_installed() {
+            let mut s = self.state.write().unwrap();
+            *s = LoaderState::NotInstalled;
+            info!("SigLIP2 models not installed at {}", self.models_dir.display());
+            return;
+        }
 
         let spec = ModelSpec {
             model: self.manifest.model.clone(),
@@ -139,30 +172,91 @@ impl VisualModelLoader {
             context_length: self.manifest.context_length,
         };
 
-        // Initialize embedder
-        let embedder = Arc::new(MockVisualEmbedder::new(spec));
-        *self.embedder.write().unwrap() = Some(embedder);
+        let image_path = self.models_dir.join(&self.manifest.image_encoder.name);
+        let text_path = self.models_dir.join(&self.manifest.text_encoder.name);
+        let tok_path = self.models_dir.join(&self.manifest.tokenizer.name);
 
-        *s = LoaderState::Ready;
+        match OnnxVisualEmbedder::load(spec, &image_path, &text_path, &tok_path) {
+            Ok(embedder) => {
+                info!("SigLIP2 ONNX embedder loaded successfully");
+                *self.embedder.write().unwrap() = Some(Arc::new(embedder));
+                *self.state.write().unwrap() = LoaderState::Ready;
+            }
+            Err(e) => {
+                error!("Failed to load SigLIP2 ONNX embedder: {e}");
+                *self.state.write().unwrap() =
+                    LoaderState::Failed(format!("ONNX load failed: {e}"));
+            }
+        }
     }
 
-    /// Simulates model downloading if not installed.
-    pub fn download(&self) {
+    pub async fn download(&self) {
         if !self.enabled() {
             return;
         }
-        let mut s = self.state.write().unwrap();
-        match *s {
-            LoaderState::Downloading(_) | LoaderState::Preparing | LoaderState::Ready => return,
-            _ => {}
+        {
+            let s = self.state.read().unwrap();
+            match *s {
+                LoaderState::Downloading(_) | LoaderState::Preparing | LoaderState::Ready => return,
+                _ => {}
+            }
         }
-        *s = LoaderState::Downloading(1.0);
-        drop(s);
+
+        *self.state.write().unwrap() = LoaderState::Downloading(0.0);
+
+        let files = [
+            &self.manifest.image_encoder,
+            &self.manifest.text_encoder,
+            &self.manifest.tokenizer,
+        ];
+
+        let total_bytes: u64 = files.iter().map(|f| f.bytes).sum();
+        let mut downloaded_bytes: u64 = 0;
+
+        for file_spec in &files {
+            let url = match &file_spec.url {
+                Some(u) => u.clone(),
+                None => {
+                    *self.state.write().unwrap() = LoaderState::Failed(format!(
+                        "No download URL for {}",
+                        file_spec.name
+                    ));
+                    return;
+                }
+            };
+
+            let spec = ModelFileDownload {
+                url,
+                dest: self.models_dir.join(&file_spec.name),
+                expected_sha256: file_spec.sha256.clone(),
+                expected_bytes: file_spec.bytes,
+            };
+
+            let base_bytes = downloaded_bytes;
+            let state_ref = &self.state;
+            let result = download_and_verify(&spec, |file_progress| {
+                let current = base_bytes + (file_spec.bytes as f64 * file_progress) as u64;
+                let overall = current as f64 / total_bytes as f64;
+                *state_ref.write().unwrap() = LoaderState::Downloading(overall);
+            })
+            .await;
+
+            match result {
+                Ok(()) => {
+                    downloaded_bytes += file_spec.bytes;
+                }
+                Err(e) => {
+                    error!("Model download failed for {}: {e}", file_spec.name);
+                    *self.state.write().unwrap() =
+                        LoaderState::Failed(format!("Download failed: {e}"));
+                    return;
+                }
+            }
+        }
 
         self.prepare();
     }
 
-    /// Removes installed models and clears state.
     pub fn remove(&self) {
         *self.embedder.write().unwrap() = None;
         let mut s = self.state.write().unwrap();

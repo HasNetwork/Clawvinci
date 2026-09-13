@@ -5,6 +5,10 @@ edition.workspace = true
 license.workspace = true
 description = "Phase 10: Transcription search, SigLIP2 visual embedding and search"
 
+[features]
+default = []
+test-mocks = []
+
 [dependencies]
 clawvinci-model = { path = "../clawvinci-model" }
 clawvinci-media = { path = "../clawvinci-media" }
@@ -17,6 +21,17 @@ tracing.workspace = true
 sha2 = "0.10"
 half = { version = "2.4", features = ["serde"] }
 reqwest = { version = "0.12", features = ["json", "multipart", "stream"] }
+futures-util = "0.3"
+dirs = "6"
+
+# ONNX Runtime for SigLIP2 visual search inference
+ort = { version = "2.0.0-rc.9", features = ["ndarray"] }
+ndarray = "0.16"
+tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
+
+# Whisper.cpp bindings for local on-device transcription
+whisper-rs = "0.14"
 
 [dev-dependencies]
 uuid = { workspace = true, features = ["v4"] }
+clawvinci-search = { path = ".", features = ["test-mocks"] }

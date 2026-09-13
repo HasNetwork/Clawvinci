@@ -4,8 +4,9 @@
 pub mod client;
 pub mod types;
 
+#[cfg(any(test, feature = "test-mocks"))]
+pub use client::MockGenerationBackend;
 pub use client::{
     ByokGenerationBackend, ByokProviderConfig, GenerationBackendClient, HttpGenerationBackend,
-    MockGenerationBackend,
 };
 pub use types::{BackendGenerationJob, BackendGenerationStatus};

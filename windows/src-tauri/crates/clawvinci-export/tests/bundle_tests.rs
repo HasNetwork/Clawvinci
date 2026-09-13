@@ -84,3 +84,90 @@ async fn test_palmier_project_exporter_bundle_roundtrip() {
     // Cleanup
     let _ = tokio::fs::remove_dir_all(&temp_root).await;
 }
+
+#[tokio::test]
+async fn test_palmier_format_fixture_decode_roundtrip() {
+    let temp_root =
+        std::env::temp_dir().join(format!("clawvinci_fixture_{}", uuid::Uuid::new_v4()));
+    let bundle_dir = temp_root.join("Fixture.palmier");
+    let media_dir = bundle_dir.join("media");
+    tokio::fs::create_dir_all(&media_dir).await.unwrap();
+
+    // Build a ProjectFile with a non-trivial timeline
+    let mut timeline = Timeline::new(24, 3840, 2160);
+    timeline.name = "Fixture Timeline".to_string();
+
+    let clip = clawvinci_model::timeline::Clip::new("asset-001", 0, 120);
+    timeline.tracks[0].clips.push(clip);
+
+    let project_file = ProjectFile::new(vec![timeline]);
+
+    // Build a MediaManifest with two entries (video + audio)
+    let mut manifest = MediaManifest::default();
+    manifest.entries.push(MediaManifestEntry::new(
+        "asset-001",
+        "Intro.mp4",
+        ClipType::Video,
+        MediaSource::Project {
+            relative_path: "media/Intro.mp4".to_string(),
+        },
+        5.0,
+    ));
+    manifest.entries.push(MediaManifestEntry::new(
+        "asset-002",
+        "Narration.wav",
+        ClipType::Audio,
+        MediaSource::Project {
+            relative_path: "media/Narration.wav".to_string(),
+        },
+        12.5,
+    ));
+
+    // Serialize to .palmier bundle files
+    let project_json = serde_json::to_string_pretty(&project_file).unwrap();
+    let manifest_json = serde_json::to_string_pretty(&manifest).unwrap();
+
+    tokio::fs::write(bundle_dir.join("project.json"), &project_json)
+        .await
+        .unwrap();
+    tokio::fs::write(bundle_dir.join("manifest.json"), &manifest_json)
+        .await
+        .unwrap();
+
+    // Decode back from fixture files
+    let decoded_project_str = tokio::fs::read_to_string(bundle_dir.join("project.json"))
+        .await
+        .unwrap();
+    let decoded_project: ProjectFile = serde_json::from_str(&decoded_project_str).unwrap();
+
+    let decoded_manifest_str = tokio::fs::read_to_string(bundle_dir.join("manifest.json"))
+        .await
+        .unwrap();
+    let decoded_manifest: MediaManifest = serde_json::from_str(&decoded_manifest_str).unwrap();
+
+    // Verify decoded objects match originals
+    assert_eq!(decoded_project, project_file);
+    assert_eq!(decoded_manifest.entries.len(), manifest.entries.len());
+
+    for (original, decoded) in manifest.entries.iter().zip(decoded_manifest.entries.iter()) {
+        assert_eq!(original.id, decoded.id);
+        assert_eq!(original.name, decoded.name);
+        assert_eq!(original.clip_type, decoded.clip_type);
+        assert_eq!(original.duration, decoded.duration);
+        assert_eq!(original.source, decoded.source);
+    }
+
+    // Verify timeline data integrity
+    assert_eq!(decoded_project.timelines.len(), 1);
+    let decoded_tl = &decoded_project.timelines[0];
+    assert_eq!(decoded_tl.name, "Fixture Timeline");
+    assert_eq!(decoded_tl.fps, 24);
+    assert_eq!(decoded_tl.width, 3840);
+    assert_eq!(decoded_tl.height, 2160);
+    assert_eq!(decoded_tl.tracks[0].clips.len(), 1);
+    assert_eq!(decoded_tl.tracks[0].clips[0].media_ref, "asset-001");
+    assert_eq!(decoded_tl.tracks[0].clips[0].start_frame, 0);
+    assert_eq!(decoded_tl.tracks[0].clips[0].duration_frames, 120);
+
+    let _ = tokio::fs::remove_dir_all(&temp_root).await;
+}
