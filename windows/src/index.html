@@ -1881,17 +1881,31 @@
         }
       }
 
+      let previewScratch = null; // offscreen canvas holding the native-resolution frame
+
       async function renderCurrentFramePreview() {
         try {
           const res = await invoke('playback_render_frame', { frame: currentFrame });
-          if (res && res.rgbaBase64) {
-            const img = new Image();
-            img.onload = () => {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            };
-            img.src = `data:image/raw;base64,${res.rgbaBase64}`;
+          if (!res || !res.rgbaBase64 || !res.width || !res.height) {
+            throw new Error('no frame');
           }
+          // Composited frame is raw RGBA8 (base64) — decode to ImageData and draw
+          // scaled onto the preview canvas. (data:image/raw is not a real MIME.)
+          const bin = atob(res.rgbaBase64);
+          const expected = res.width * res.height * 4;
+          if (bin.length < expected) throw new Error('short frame buffer');
+          const bytes = new Uint8ClampedArray(expected);
+          for (let i = 0; i < expected; i++) bytes[i] = bin.charCodeAt(i);
+          const imageData = new ImageData(bytes, res.width, res.height);
+
+          if (!previewScratch) previewScratch = document.createElement('canvas');
+          if (previewScratch.width !== res.width || previewScratch.height !== res.height) {
+            previewScratch.width = res.width;
+            previewScratch.height = res.height;
+          }
+          previewScratch.getContext('2d').putImageData(imageData, 0, 0);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(previewScratch, 0, 0, canvas.width, canvas.height);
         } catch (e) {
           // Frame composition fallback
           ctx.fillStyle = '#0a0a0d';

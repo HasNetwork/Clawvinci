@@ -71,6 +71,25 @@ to get a GPU surface onto the viewport; only one is realistic here:
 
 ## 4. Staged implementation (each stage is independently CI-buildable & testable)
 
+> **Progress log**
+> - **Stage 0 — ✅ DONE & confirmed on real hardware** (2026-09-13). wgpu 25
+>   added; `gpu_probe` reports the adapter/backend; Settings → General shows the
+>   status. User confirmed "GPU available" on their laptop.
+> - **Latent IPC bug found & fixed while verifying Stage 0**: the frontend
+>   `invoke()` wrapper only used `window.__TAURI__.core.invoke`, but
+>   `tauri.conf.json` had `withGlobalTauri:false`, so the global was never
+>   injected and **every** command resolved to `null` (this is why the GPU line
+>   first showed "Unknown" and no `[GPU]` log printed — the Rust probe never
+>   ran). The app had only ever been built in CI, never run, so this went
+>   unnoticed across Phases 6–15. Fixed: `withGlobalTauri:true` +
+>   `__TAURI_INTERNALS__.invoke` fallback. This also unblocks the Item 5/6 UI
+>   features, which could not have worked at runtime before this fix.
+> - **Decision (2026-09-13): fix the CPU preview first.** Since the preview was
+>   broken and the app had never run, we make the CPU present path actually work
+>   (decode composited RGBA into `ImageData`, draw scaled to the canvas) as a
+>   usable baseline + end-to-end IPC proof, *before* the child-HWND GPU surface.
+>   This is the §6a CPU fallback brought forward. Stage 1 (GPU surface) follows.
+
 ### Stage 0 — Prove wgpu initializes on the real GPU (no UI/present yet)
 - Add deps to the **main crate** (`windows/src-tauri/Cargo.toml`): `wgpu`,
   `pollster`, `bytemuck`, `raw-window-handle`, and `windows` (Win32 features for
