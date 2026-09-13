@@ -26,6 +26,7 @@ use clawvinci_mcp::{
     all_tool_definitions, AgentService, McpMediaItem, McpState, SharedMcpState, DEFAULT_MCP_PORT,
 };
 use clawvinci_model::{MediaManifest, ProjectFile};
+use clawvinci_search::{LoaderState, LocalWhisperEngine, VisualModelLoader};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -993,6 +994,75 @@ async fn project_create(
     Ok(new_tl)
 }
 
+// MARK: - Local AI Model Downloads
+
+/// Shared on-device model engines for the Settings model-downloader UI.
+pub struct ModelEngines {
+    pub whisper: Arc<LocalWhisperEngine>,
+    pub siglip: Arc<VisualModelLoader>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelStatusDto {
+    pub name: String,
+    pub installed: bool,
+    pub size_mb: u64,
+    pub state: LoaderState,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelsStatusDto {
+    pub whisper: ModelStatusDto,
+    pub siglip: ModelStatusDto,
+}
+
+#[tauri::command]
+async fn model_status(
+    models: tauri::State<'_, Arc<ModelEngines>>,
+) -> Result<ModelsStatusDto, String> {
+    let whisper_bytes = models.whisper.manifest().model_file.bytes;
+    let siglip_manifest = models.siglip.manifest();
+    let siglip_bytes = siglip_manifest.image_encoder.bytes
+        + siglip_manifest.text_encoder.bytes
+        + siglip_manifest.tokenizer.bytes;
+
+    Ok(ModelsStatusDto {
+        whisper: ModelStatusDto {
+            name: "Whisper (on-device transcription)".to_string(),
+            installed: models.whisper.is_installed(),
+            size_mb: whisper_bytes / 1_048_576,
+            state: models.whisper.state(),
+        },
+        siglip: ModelStatusDto {
+            name: "SigLIP2 (visual search)".to_string(),
+            installed: models.siglip.is_installed(),
+            size_mb: siglip_bytes / 1_048_576,
+            state: models.siglip.state(),
+        },
+    })
+}
+
+#[tauri::command]
+async fn model_download(
+    kind: String,
+    models: tauri::State<'_, Arc<ModelEngines>>,
+) -> Result<(), String> {
+    match kind.as_str() {
+        "whisper" => {
+            let engine = Arc::clone(&models.whisper);
+            tokio::spawn(async move { engine.download().await });
+        }
+        "siglip" => {
+            let loader = Arc::clone(&models.siglip);
+            tokio::spawn(async move { loader.download().await });
+        }
+        other => return Err(format!("Unknown model kind: {other}")),
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut timeline = Timeline::new(30, 1920, 1080);
@@ -1113,10 +1183,17 @@ pub fn run() {
         mcp_cancel_token,
     }));
 
+    let models_dir = clawvinci_search::model_download::default_models_dir();
+    let model_engines = Arc::new(ModelEngines {
+        whisper: Arc::new(LocalWhisperEngine::new(&models_dir)),
+        siglip: Arc::new(VisualModelLoader::new(models_dir)),
+    });
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(state)
+        .manage(model_engines)
         .invoke_handler(tauri::generate_handler![
             playback_get_state,
             playback_play,
@@ -1158,6 +1235,8 @@ pub fn run() {
             storage_clear_cache,
             project_recent_list,
             project_create,
+            model_status,
+            model_download,
         ])
         .setup(|_app| Ok(()))
         .run(tauri::generate_context!())

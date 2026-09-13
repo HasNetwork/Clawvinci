@@ -1222,6 +1222,31 @@
                     </div>
                   </div>
                 </div>
+
+                <div class="settings-section">
+                  <h4>Local AI Model Downloads</h4>
+                  <p class="form-hint">On-device models for transcription and visual search. Downloaded once to %LOCALAPPDATA%\Clawvinci\Models; no network is used afterwards.</p>
+                  <div class="model-dl-row" data-model="whisper">
+                    <div class="model-dl-info">
+                      <div class="model-dl-name" id="model-name-whisper">Whisper (on-device transcription)</div>
+                      <div class="model-dl-status" id="model-status-whisper">Checking…</div>
+                      <div class="model-dl-progress" id="model-progress-whisper" hidden>
+                        <div class="model-dl-bar" id="model-bar-whisper"></div>
+                      </div>
+                    </div>
+                    <button class="btn" id="model-btn-whisper" data-kind="whisper">Download</button>
+                  </div>
+                  <div class="model-dl-row" data-model="siglip">
+                    <div class="model-dl-info">
+                      <div class="model-dl-name" id="model-name-siglip">SigLIP2 (visual search)</div>
+                      <div class="model-dl-status" id="model-status-siglip">Checking…</div>
+                      <div class="model-dl-progress" id="model-progress-siglip" hidden>
+                        <div class="model-dl-bar" id="model-bar-siglip"></div>
+                      </div>
+                    </div>
+                    <button class="btn" id="model-btn-siglip" data-kind="siglip">Download</button>
+                  </div>
+                </div>
               </div>
 
               <!-- Agent & MCP Pane -->
@@ -2320,11 +2345,16 @@
           console.warn('Settings load error:', e);
         }
         refreshStorageStats();
+        refreshModelStatus();
         settingsModalBackdrop.classList.add('open');
       }
 
       function closeSettingsModal() {
         settingsModalBackdrop.classList.remove('open');
+        if (modelPollTimer) {
+          clearInterval(modelPollTimer);
+          modelPollTimer = null;
+        }
       }
 
       if (btnSettings) btnSettings.addEventListener('click', openSettingsModal);
@@ -2349,6 +2379,84 @@
             target.type = target.type === 'password' ? 'text' : 'password';
             btn.textContent = target.type === 'password' ? '👁' : '🔒';
           }
+        });
+      });
+
+      // Local AI model downloads
+      let modelPollTimer = null;
+
+      function renderModelStatus(kind, dto) {
+        const statusEl = document.getElementById(`model-status-${kind}`);
+        const btnEl = document.getElementById(`model-btn-${kind}`);
+        const progWrap = document.getElementById(`model-progress-${kind}`);
+        const barEl = document.getElementById(`model-bar-${kind}`);
+        if (!statusEl || !btnEl || !dto) return false;
+        const st = dto.state || { type: 'Unknown' };
+        let active = false;
+        if (st.type === 'Downloading') {
+          active = true;
+          const pct = Math.round((st.value || 0) * 100);
+          statusEl.textContent = `Downloading… ${pct}%`;
+          if (progWrap) progWrap.hidden = false;
+          if (barEl) barEl.style.width = `${pct}%`;
+          btnEl.disabled = true;
+          btnEl.textContent = 'Downloading…';
+        } else if (st.type === 'Preparing') {
+          active = true;
+          statusEl.textContent = 'Preparing…';
+          if (progWrap) progWrap.hidden = false;
+          if (barEl) barEl.style.width = '100%';
+          btnEl.disabled = true;
+          btnEl.textContent = 'Preparing…';
+        } else if (dto.installed || st.type === 'Ready') {
+          statusEl.textContent = `Installed (~${dto.sizeMb} MB)`;
+          if (progWrap) progWrap.hidden = true;
+          btnEl.disabled = true;
+          btnEl.textContent = 'Installed';
+        } else if (st.type === 'Failed') {
+          statusEl.textContent = `Failed: ${st.value || 'unknown error'}`;
+          if (progWrap) progWrap.hidden = true;
+          btnEl.disabled = false;
+          btnEl.textContent = 'Retry';
+        } else {
+          statusEl.textContent = `Not installed (~${dto.sizeMb} MB download)`;
+          if (progWrap) progWrap.hidden = true;
+          btnEl.disabled = false;
+          btnEl.textContent = 'Download';
+        }
+        return active;
+      }
+
+      async function refreshModelStatus() {
+        try {
+          const status = await invoke('model_status');
+          if (!status) return;
+          const active =
+            renderModelStatus('whisper', status.whisper) |
+            renderModelStatus('siglip', status.siglip);
+          if (active && !modelPollTimer) {
+            modelPollTimer = setInterval(refreshModelStatus, 1000);
+          } else if (!active && modelPollTimer) {
+            clearInterval(modelPollTimer);
+            modelPollTimer = null;
+          }
+        } catch (e) {
+          console.warn('Model status error:', e);
+        }
+      }
+
+      document.querySelectorAll('[id^="model-btn-"]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const kind = btn.dataset.kind;
+          if (!kind) return;
+          btn.disabled = true;
+          btn.textContent = 'Starting…';
+          try {
+            await invoke('model_download', { kind });
+          } catch (e) {
+            console.warn('Model download error:', e);
+          }
+          refreshModelStatus();
         });
       });
 

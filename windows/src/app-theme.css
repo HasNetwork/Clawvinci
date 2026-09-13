@@ -244,6 +244,50 @@ body {
   line-height: 1.4;
 }
 
+.model-dl-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+}
+
+.model-dl-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.model-dl-name {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.model-dl-status {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
+.model-dl-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-raised);
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.model-dl-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent-primary, #4a9eff);
+  transition: width 0.3s ease;
+}
+
 .input-with-action {
   display: flex;
   gap: 6px;
