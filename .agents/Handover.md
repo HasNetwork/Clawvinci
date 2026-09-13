@@ -5,7 +5,7 @@
 > **Current Git Branch**: `worktree-plan-windows-port`  
 > **Last Clean Commit**: `8781101`  
 > **CI Verification Status**: ✅ **100% Green** (GitHub Actions Run `34220793312`, Artifact `clawvinci-windows-x64`) — CI-green does NOT mean feature-complete, see correction below  
-> **Completed Milestones**: **Phases 0.0 through 14.0 implemented** (embedded 53-tool MCP server, 28-locale i18n, persistent settings, Home hub, onboarding, Windows-native shortcuts and setup guides, real AI pipelines). Phase 14 pending CI verification.
+> **Completed Milestones**: **Phases 0.0 through 14.0 implemented and CI-green** (embedded 53-tool MCP server, 28-locale i18n, persistent settings, Home hub, onboarding, Windows-native shortcuts and setup guides, real AI pipelines). Phase 14 verified on CI run `34752934293`.
 >
 > **Phase 14 (2026-09-13)**: The three AI pipelines flagged by the Phase 14 audit — local Whisper transcription, SigLIP2 visual search, and MCP generative AI tools — are now wired to real implementations. All mock types gated behind `#[cfg(any(test, feature = "test-mocks"))]`. See `.agents/HISTORY/14-0-real-ai-pipelines.md` for full implementation log. **Active target is now Phase 15 — production readiness.**
 
@@ -80,7 +80,7 @@ All incoming agents working on this codebase **must strictly abide by these rule
 | **11.0** | `clawvinci-gen` | Generative AI provider catalog, submissions, edit clients, preprocessing, timeline insertion, and MCP tools. | ✅ CI Green — **Phase 14 fix**: MCP tools wired to real `ByokGenerationBackend`, provider-routing fix |
 | **12.0** | `clawvinci` (Cleanup) | **Decision 10 Compliance**: Purged `api.palmier.io`, OpenAI BYOK Whisper + local transcription engine, ByokGenerationBackend, Tauri v2 updater. | ✅ CI Green — **Phase 14 fix**: real `WhisperRsTranscriber` via whisper-rs, mock gated |
 | **13.0** | `clawvinci` (Tauri + Web) | **Phase 13.0 Polish**: 28-locale i18n catalog, persistent settings & storage backend, BYOK models pane, Home hub & onboarding, Windows shortcuts & MCP setup guide. | ✅ **100% CI Green** (`13-0-polish.md`, Run `34219245633`) |
-| **14.0** | `clawvinci-search`, `clawvinci-mcp`, `clawvinci-gen` | Real AI pipelines: SigLIP2 via ONNX Runtime, Whisper via whisper-rs, MCP generate wired to ByokGenerationBackend, provider-routing fix, mock gating, .palmier fixture test. | ✅ Implemented, CI pending |
+| **14.0** | `clawvinci-search`, `clawvinci-mcp`, `clawvinci-gen` | Real AI pipelines: SigLIP2 via ONNX Runtime, Whisper via whisper-rs, MCP generate wired to ByokGenerationBackend, provider-routing fix, mock gating, .palmier fixture test. | ✅ CI Green (Run `34752934293`) |
 | **15.0** | `clawvinci` (packaging) | Production readiness: FFmpeg sidecar bundling, code signing, GPU swapchain, media stress testing, canvas polish. | 📋 Planned, after Phase 14 |
 
 ---

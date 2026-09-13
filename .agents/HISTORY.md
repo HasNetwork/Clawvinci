@@ -25,7 +25,7 @@ immediately after that subphase's commit.
 
 ## Handover & Continuation
 
-- **Completed Milestone**: Phases 0.0–14.0 implemented. Phases 0–13 CI-green; Phase 14 pending CI verification (push required).
+- **Completed Milestone**: Phases 0.0–14.0 implemented and CI-green (Phase 14 verified on run 34752934293).
 - **Phase 14 corrected**: the three mocked AI pipelines (local transcription, visual search, generative AI) identified by the Phase 14 audit are now wired to real implementations. All mock types are gated behind `#[cfg(any(test, feature = "test-mocks"))]` and unreachable in release builds.
 - **Next Active Target**: **Phase 15.0 — Production readiness** (`.agents/PLAN/15-0-production-readiness.md`): FFmpeg sidecar bundling, code signing, GPU swapchain, media stress testing, canvas polish.
 

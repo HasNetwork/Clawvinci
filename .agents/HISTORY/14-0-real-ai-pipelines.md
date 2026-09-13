@@ -238,3 +238,29 @@ mock construction — no production code path can instantiate any mock type.
 | `clawvinci-mcp/src/tools/generate.rs` | Fully rewritten — GenerationContext, real backend calls |
 | `clawvinci-mcp/src/executor.rs` | Holds GenerationContext, passes to tool handlers |
 | `clawvinci-export/tests/bundle_tests.rs` | Added fixture decode roundtrip test |
+
+---
+
+## CI verification
+
+Green on GitHub Actions run **34752934293** (windows-latest): `cargo check`,
+`cargo clippy --workspace -- -D warnings`, full `cargo test --workspace`, and
+packaging all passed. Getting there took several follow-up fix commits after
+the initial Phase 14 commit:
+
+- ndarray 0.16 → 0.17 to match ort v2's transitive ndarray (the trait
+  `OwnedTensorArrayData` is only implemented for the version ort itself uses).
+- ort v2 API: `ort::inputs!` returns an array (not a `Result`), so the
+  erroneous `.map_err()` was removed; `SessionBuilder::commit_from_file` takes
+  `&mut self`, so the builder closures needed `mut`.
+- `Session::run()` takes `&mut self`, but `VisualEmbedder` methods take
+  `&self` — sessions wrapped in `std::sync::Mutex` for interior mutability
+  (also removed the manual `unsafe impl Send/Sync`).
+- Imported the `GenerationBackendClient` trait in `generate.rs` so `submit`/
+  `get_job` resolve on `Arc<ByokGenerationBackend>`.
+- Gated `BackendGenerationStatus`, `tokio::sync::Mutex`, `uuid::Uuid` imports
+  in `client.rs` behind the mock feature; dropped unused imports elsewhere.
+- `#[derive(Default)]` for `ToolExecutor` (clippy `derivable_impls`).
+- Fixture test: `MediaManifestEntry` field is `entry_type` not `clip_type`;
+  `Timeline::new()` starts with zero tracks, so a `Track` must be constructed
+  and pushed before adding a clip.
