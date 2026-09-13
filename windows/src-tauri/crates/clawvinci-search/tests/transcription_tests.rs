@@ -3,9 +3,9 @@
 
 use clawvinci_search::error::SearchError;
 use clawvinci_search::transcription::{
-    DeterministicLocalTranscriber, LocalWhisperEngine, LocalWhisperTranscriber,
-    TranscriptCache, TranscriptionBackend, TranscriptionBackendConfig, TranscriptionEngineMode,
-    TranscriptionService, WhisperAudioPreprocessor, WHISPER_N_MELS, WHISPER_SAMPLE_RATE,
+    LocalWhisperEngine, TranscriptCache, TranscriptionBackend, TranscriptionBackendConfig,
+    TranscriptionEngineMode, TranscriptionService, WhisperAudioPreprocessor, WHISPER_N_MELS,
+    WHISPER_SAMPLE_RATE,
 };
 use serde_json::json;
 use std::f32::consts::PI;

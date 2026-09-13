@@ -152,7 +152,7 @@ async fn test_palmier_format_fixture_decode_roundtrip() {
     for (original, decoded) in manifest.entries.iter().zip(decoded_manifest.entries.iter()) {
         assert_eq!(original.id, decoded.id);
         assert_eq!(original.name, decoded.name);
-        assert_eq!(original.clip_type, decoded.clip_type);
+        assert_eq!(original.entry_type, decoded.entry_type);
         assert_eq!(original.duration, decoded.duration);
         assert_eq!(original.source, decoded.source);
     }
