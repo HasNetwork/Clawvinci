@@ -8,12 +8,13 @@ use ndarray::Array4;
 use ort::session::Session;
 use ort::value::Tensor;
 use std::path::Path;
+use std::sync::Mutex;
 use tokenizers::Tokenizer;
 
 pub struct OnnxVisualEmbedder {
     spec: ModelSpec,
-    image_session: Session,
-    text_session: Session,
+    image_session: Mutex<Session>,
+    text_session: Mutex<Session>,
     tokenizer: Tokenizer,
 }
 
@@ -42,8 +43,8 @@ impl OnnxVisualEmbedder {
 
         Ok(Self {
             spec,
-            image_session,
-            text_session,
+            image_session: Mutex::new(image_session),
+            text_session: Mutex::new(text_session),
             tokenizer,
         })
     }
@@ -58,10 +59,6 @@ impl OnnxVisualEmbedder {
         }
     }
 }
-
-// ort::Session is Send+Sync in ort v2; tokenizers::Tokenizer is Send+Sync.
-unsafe impl Send for OnnxVisualEmbedder {}
-unsafe impl Sync for OnnxVisualEmbedder {}
 
 impl VisualEmbedder for OnnxVisualEmbedder {
     fn spec(&self) -> &ModelSpec {
@@ -91,8 +88,11 @@ impl VisualEmbedder for OnnxVisualEmbedder {
             SearchError::AnalysisFailed(format!("Failed to create ONNX tensor: {e}"))
         })?;
 
-        let outputs = self
-            .text_session
+        let mut session = self.text_session.lock().map_err(|e| {
+            SearchError::AnalysisFailed(format!("Session lock poisoned: {e}"))
+        })?;
+
+        let outputs = session
             .run(ort::inputs![input_tensor])
             .map_err(|e| {
                 SearchError::AnalysisFailed(format!("Text encoder inference failed: {e}"))
@@ -134,8 +134,11 @@ impl VisualEmbedder for OnnxVisualEmbedder {
             SearchError::AnalysisFailed(format!("Failed to create ONNX tensor: {e}"))
         })?;
 
-        let outputs = self
-            .image_session
+        let mut session = self.image_session.lock().map_err(|e| {
+            SearchError::AnalysisFailed(format!("Session lock poisoned: {e}"))
+        })?;
+
+        let outputs = session
             .run(ort::inputs![input_tensor])
             .map_err(|e| {
                 SearchError::AnalysisFailed(format!("Image encoder inference failed: {e}"))
