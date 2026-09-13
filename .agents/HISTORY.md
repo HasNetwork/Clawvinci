@@ -22,10 +22,11 @@ immediately after that subphase's commit.
 | 13 | 13.0 | Polish: 28-locale i18n subsystem, persistent settings & storage backend, BYOK models pane, Home hub & onboarding, Windows shortcuts & MCP setup guide | [`13-0-polish.md`](HISTORY/13-0-polish.md) |
 | 14 | 14.0 (audit) | Independent audit found transcription, visual-search, and generation pipelines mocked/unwired in production despite being marked complete | [`14-0-mock-audit-findings.md`](HISTORY/14-0-mock-audit-findings.md) |
 | 14 | 14.0 (fix) | ✅ Real SigLIP2 via ONNX Runtime, real Whisper via whisper-rs, MCP generate tools wired to ByokGenerationBackend, provider-routing bug fixed, .palmier fixture test, all mocks gated behind `#[cfg(test)]`/feature flag | [`14-0-real-ai-pipelines.md`](HISTORY/14-0-real-ai-pipelines.md) |
+| 15 | 15.0 (partial) | 🟡 Production readiness: Item 1 (FFmpeg bundled as Tauri sidecar) + Item 6 (in-app model downloader UI + IPC) done & CI-green. Items 2–5 (code-signing, GPU swapchain, media stress-test, canvas polish) pending — need user decisions/interactive verification | [`15-0-production-readiness.md`](HISTORY/15-0-production-readiness.md) |
 
 ## Handover & Continuation
 
 - **Completed Milestone**: Phases 0.0–14.0 implemented and CI-green (Phase 14 verified on run 34752934293).
 - **Phase 14 corrected**: the three mocked AI pipelines (local transcription, visual search, generative AI) identified by the Phase 14 audit are now wired to real implementations. All mock types are gated behind `#[cfg(any(test, feature = "test-mocks"))]` and unreachable in release builds.
-- **Next Active Target**: **Phase 15.0 — Production readiness** (`.agents/PLAN/15-0-production-readiness.md`): FFmpeg sidecar bundling, code signing, GPU swapchain, media stress testing, canvas polish.
+- **Next Active Target**: **Phase 15.0 — Production readiness** (`.agents/PLAN/15-0-production-readiness.md`). Items 1 (FFmpeg sidecar) and 6 (model downloader) are done & CI-green (run 34755-series). Remaining: Item 2 code-signing (needs an Authenticode cert purchase), Item 3 GPU swapchain (large rework, needs real GPU), Items 4–5 media stress-test + canvas polish (need real media + interactive verification).
 

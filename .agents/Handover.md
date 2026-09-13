@@ -81,7 +81,7 @@ All incoming agents working on this codebase **must strictly abide by these rule
 | **12.0** | `clawvinci` (Cleanup) | **Decision 10 Compliance**: Purged `api.palmier.io`, OpenAI BYOK Whisper + local transcription engine, ByokGenerationBackend, Tauri v2 updater. | ✅ CI Green — **Phase 14 fix**: real `WhisperRsTranscriber` via whisper-rs, mock gated |
 | **13.0** | `clawvinci` (Tauri + Web) | **Phase 13.0 Polish**: 28-locale i18n catalog, persistent settings & storage backend, BYOK models pane, Home hub & onboarding, Windows shortcuts & MCP setup guide. | ✅ **100% CI Green** (`13-0-polish.md`, Run `34219245633`) |
 | **14.0** | `clawvinci-search`, `clawvinci-mcp`, `clawvinci-gen` | Real AI pipelines: SigLIP2 via ONNX Runtime, Whisper via whisper-rs, MCP generate wired to ByokGenerationBackend, provider-routing fix, mock gating, .palmier fixture test. | ✅ CI Green (Run `34752934293`) |
-| **15.0** | `clawvinci` (packaging) | Production readiness: FFmpeg sidecar bundling, code signing, GPU swapchain, media stress testing, canvas polish. | 📋 Planned, after Phase 14 |
+| **15.0** | `clawvinci` (packaging) | Production readiness. **Item 1** FFmpeg Tauri sidecar + **Item 6** in-app model downloader done & CI-green. **Items 2–5** (code-signing, GPU swapchain, media stress-test, canvas polish) pending — need user decisions/interactive verification. | 🟡 In progress (`15-0-production-readiness.md`) |
 
 ---
 
