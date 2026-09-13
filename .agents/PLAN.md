@@ -105,6 +105,8 @@ grounded in.
 | 11 | Generative AI integration: provider catalog/submission/edit clients, preprocessing | [`PLAN/11-0-generative-ai.md`](PLAN/11-0-generative-ai.md) |
 | 12 | **Revised (Decision 10):** no auth/backend/telemetry — BYOK/local cleanup (fix Phase 10's transcription backend, verify Phase 11's generation backend) + Tauri updater | [`PLAN/12-0-auth-backend-telemetry-updater.md`](PLAN/12-0-auth-backend-telemetry-updater.md) |
 | 13 | Polish: localization, settings panes, home/onboarding, in-app help | [`PLAN/13-0-polish.md`](PLAN/13-0-polish.md) |
+| 14 | **New, post-audit:** make the local transcription, visual search, and generative AI pipelines actually real — Phases 10-12 marked them complete while mocks were still reachable in production | [`PLAN/14-0-real-ai-pipelines.md`](PLAN/14-0-real-ai-pipelines.md) |
+| 15 | **New:** production readiness — FFmpeg sidecar bundling, installer code signing, GPU hardware swapchain, real-world media stress testing, canvas interaction polish | [`PLAN/15-0-production-readiness.md`](PLAN/15-0-production-readiness.md) |
 
 Phases 2–4 are the critical path (nothing plays back or exports without
 them) and the highest technical risk (FFmpeg↔Rust↔wgpu↔Tauri frame
@@ -148,3 +150,18 @@ Both fixes are Phase 12's job precisely because that's where the
 auth/backend phase always lived in the plan — it's now a cleanup-and-updater
 phase instead of an accounts phase. See `PLAN/12-0-auth-backend-telemetry-updater.md`
 for the full rewrite.
+
+## Revision after Phase 13 shipped: Phases 10-12's AI pipelines were mocked, not real
+
+All 14 phases (0-13) were reported complete and CI-green. An independent
+audit requested by the user then found that three subsystems marked
+complete are mocked or unwired at the production call site: local
+transcription (hardcoded word bank, no real inference), SigLIP2 visual
+search (hash-based mock is the only embedder reachable at runtime), and
+generative AI (a correctly-built real HTTP client that the MCP tool
+handlers never actually call). Full findings:
+`.agents/HISTORY/14-0-mock-audit-findings.md`. Fix scoped as **Phase 14**
+above; the previously-informal "commercial readiness" roadmap is now
+**Phase 15**, sequenced after it. `RULES.md`'s Verification section was
+strengthened accordingly: a mock reachable outside tests is never a valid
+Definition-of-done, no matter what CI says.

@@ -15,14 +15,16 @@ immediately after that subphase's commit.
 | 7 | 7.0 | Export engine: Batch render-to-file, FCPXML 1.10–1.14, Premiere XMEML 4, project bundle packager, export queue, UI modal | [`7-0-export.md`](HISTORY/7-0-export.md) |
 | 8 | 8.0 | MCP agent layer: 52-tool execution engine, embedded HTTP/SSE server (port 19789), in-app chat orchestrator, Tauri IPC | [`8-0-mcp-agent-layer.md`](HISTORY/8-0-mcp-agent-layer.md) |
 | 9 | 9.0 | Audio analysis engine: Envelopes, real-time metering, cross-correlation sync, silence/dead-air planner, beat/tempo detector, VAD | [`9-0-audio-analysis.md`](HISTORY/9-0-audio-analysis.md) |
-| 10 | 10.0 | Search & transcription: SigLIP2 visual search (PALMEMB1 binary store), transcript search, word cut planner | [`10-0-search-transcription.md`](HISTORY/10-0-search-transcription.md) |
-| 11 | 11.0 | Generative AI integration: Model catalog, cost estimator, submission builders, preprocessing, service orchestrator, MCP tools | [`11-0-generative-ai.md`](HISTORY/11-0-generative-ai.md) |
+| 10 | 10.0 | Search & transcription: SigLIP2 visual search (PALMEMB1 binary store), transcript search, word cut planner. ⚠️ **Correction (see 14.0 audit):** the visual embedder wired into production is `MockVisualEmbedder` (hash-based), not real SigLIP2 inference — download() never downloads anything. | [`10-0-search-transcription.md`](HISTORY/10-0-search-transcription.md) |
+| 11 | 11.0 | Generative AI integration: Model catalog, cost estimator, submission builders, preprocessing, service orchestrator, MCP tools. ⚠️ **Correction (see 14.0 audit):** the real per-provider HTTP client is never called — MCP `generate_*` tools fabricate a result and hit no network. | [`11-0-generative-ai.md`](HISTORY/11-0-generative-ai.md) |
 | 12 | 12.0 (plan revision) | Decision 10: no accounts/backend/telemetry — BYOK/local only. Docs-only; found and scoped a real defect (Phase 10's transcription backend calls `api.palmier.io`) for Phase 12 to fix | [`12-0-plan-revision-decision-10.md`](HISTORY/12-0-plan-revision-decision-10.md) |
-| 12 | 12.0 | BYOK/local cleanup + updater: Removed api.palmier.io, OpenAI BYOK Whisper + local on-device engine, ByokGenerationBackend, Tauri v2 updater | [`12-0-auth-backend-telemetry-updater.md`](HISTORY/12-0-auth-backend-telemetry-updater.md) |
+| 12 | 12.0 | BYOK/local cleanup + updater: Removed api.palmier.io, OpenAI BYOK Whisper + local on-device engine, ByokGenerationBackend, Tauri v2 updater. ⚠️ **Correction (see 14.0 audit):** the "local on-device engine" is `DeterministicLocalTranscriber` — real VAD, but a hardcoded 16-word bank, not Whisper inference. | [`12-0-auth-backend-telemetry-updater.md`](HISTORY/12-0-auth-backend-telemetry-updater.md) |
 | 13 | 13.0 | Polish: 28-locale i18n subsystem, persistent settings & storage backend, BYOK models pane, Home hub & onboarding, Windows shortcuts & MCP setup guide | [`13-0-polish.md`](HISTORY/13-0-polish.md) |
+| 14 | 14.0 | 🔴 **Audit finding, not yet fixed**: independent audit found the transcription, visual-search, and generation pipelines are mocked/unwired in production despite being marked complete. Fix planned, not yet implemented | [`14-0-mock-audit-findings.md`](HISTORY/14-0-mock-audit-findings.md) |
 
 ## Handover & Continuation
 
-- **Completed Milestone**: **Phase 13.0 — Polish: Localization, Settings, Home/Onboarding, Help & Windows MCP**. All phases (0.0 through 13.0) of Clawvinci Windows Port are fully implemented, audited, and verified.
-- **Project Status**: Full feature parity with macOS Palmier Pro achieved natively on Windows.
+- **Completed Milestone**: Phases 0.0–13.0 implemented and CI-green.
+- **Correction**: a post-completion audit found Phases 10–12's AI pipelines (local transcription, visual search, generative AI) are mocked/unwired at the production call site, not actually functional — see `HISTORY/14-0-mock-audit-findings.md`. "CI-green" and "feature parity" claims above do NOT hold for those three subsystems until Phase 14 fixes them.
+- **Next Active Target**: **Phase 14.0 — Make the AI pipelines real** (`.agents/PLAN/14-0-real-ai-pipelines.md`). Phase 15 (production readiness) is planned to follow it, not before.
 

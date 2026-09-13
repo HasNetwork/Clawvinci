@@ -4,8 +4,10 @@
 > **Workspace Root**: `d:\projects\palmier-win\.claude\worktrees\plan-windows-port`  
 > **Current Git Branch**: `worktree-plan-windows-port`  
 > **Last Clean Commit**: `8781101`  
-> **CI Verification Status**: ✅ **100% Green** (GitHub Actions Run `34220793312`, Artifact `clawvinci-windows-x64`)  
-> **Completed Milestones**: **Phases 0.0 through 13.0 — Complete native Windows Port of Palmier Pro** (Full feature parity, zero telemetry, strictly BYOK/local, embedded 53-tool MCP server, 28-locale i18n, persistent settings, Home hub, onboarding, Windows-native shortcuts and setup guides)
+> **CI Verification Status**: ✅ **100% Green** (GitHub Actions Run `34220793312`, Artifact `clawvinci-windows-x64`) — CI-green does NOT mean feature-complete, see correction below  
+> **Completed Milestones**: **Phases 0.0 through 13.0 implemented, CI-green** (embedded 52-tool MCP server, 28-locale i18n, persistent settings, Home hub, onboarding, Windows-native shortcuts and setup guides). **Full feature parity is NOT yet true** — see correction.
+>
+> ⚠️ **CORRECTION (2026-09-13)**: An independent audit found that three subsystems this document previously listed as complete — local on-device transcription, SigLIP2 visual search, and generative AI — are mocked or unwired at the production call site. Full findings in `.agents/HISTORY/14-0-mock-audit-findings.md`; fix plan in `.agents/PLAN/14-0-real-ai-pipelines.md`. **Active target is now Phase 14, not new feature work.**
 
 ---
 
@@ -74,10 +76,12 @@ All incoming agents working on this codebase **must strictly abide by these rule
 | **7.0** | `clawvinci-export` | Batch video render-to-file, FCPXML 1.10–1.14 export, Premiere XMEML 4 export, self-contained `.palmier` bundle export, export queue. | ✅ CI Green (`7-0-export.md`, Run `34102735695`) |
 | **8.0** | `clawvinci-mcp` | 52-tool MCP execution engine, embedded HTTP/SSE MCP server on `127.0.0.1:19789/mcp`, in-app agent chat orchestration. | ✅ CI Green (`8-0-mcp-agent-layer.md`, Run `34151682590`) |
 | **9.0** | `clawvinci-audio` | Audio analysis engine: Envelopes, real-time metering, cross-correlation sync, silence/dead-air planner, beat/tempo detector, VAD. | ✅ CI Green (`9-0-audio-analysis.md`, Run `34192487829`) |
-| **10.0** | `clawvinci-search` | Semantic visual search (SigLIP2 / `PALMEMB1` binary embeddings), transcript search, word cut planner. | ✅ CI Green (`10-0-search-transcription.md`, Run `34195654610`) |
-| **11.0** | `clawvinci-gen` | Generative AI provider catalog, submissions, edit clients, preprocessing, timeline insertion, and MCP tools. | ✅ CI Green (`11-0-generative-ai.md`, Run `34208682487`) |
-| **12.0** | `clawvinci` (Cleanup) | **Decision 10 Compliance**: Purged `api.palmier.io`, OpenAI BYOK Whisper + local transcription engine, ByokGenerationBackend, Tauri v2 updater. | ✅ CI Green (`12-0-auth-backend-telemetry-updater.md`, Run `34216896609`) |
+| **10.0** | `clawvinci-search` | Semantic visual search (SigLIP2 / `PALMEMB1` binary embeddings), transcript search, word cut planner. | ⚠️ CI Green but **embedder is `MockVisualEmbedder` (hash-based), not real SigLIP2** — see Phase 14 |
+| **11.0** | `clawvinci-gen` | Generative AI provider catalog, submissions, edit clients, preprocessing, timeline insertion, and MCP tools. | ⚠️ CI Green but **the real HTTP client is never called from `generate.rs`'s MCP tools** — see Phase 14 |
+| **12.0** | `clawvinci` (Cleanup) | **Decision 10 Compliance**: Purged `api.palmier.io`, OpenAI BYOK Whisper + local transcription engine, ByokGenerationBackend, Tauri v2 updater. | ⚠️ CI Green, Decision 10 purge confirmed real, but **"local transcription engine" is a hardcoded 16-word bank, not Whisper** — see Phase 14 |
 | **13.0** | `clawvinci` (Tauri + Web) | **Phase 13.0 Polish**: 28-locale i18n catalog, persistent settings & storage backend, BYOK models pane, Home hub & onboarding, Windows shortcuts & MCP setup guide. | ✅ **100% CI Green** (`13-0-polish.md`, Run `34219245633`) |
+| **14.0** | `clawvinci-search`, `clawvinci-mcp`, `clawvinci-gen` | **ACTIVE TARGET**: make local transcription, visual search, and generative AI actually real (see `.agents/PLAN/14-0-real-ai-pipelines.md`). | 🔴 Not started |
+| **15.0** | `clawvinci` (packaging) | Production readiness: FFmpeg sidecar bundling, code signing, GPU swapchain, media stress testing, canvas polish. | 📋 Planned, after Phase 14 |
 
 ---
 
@@ -148,20 +152,20 @@ Every CI run automatically compiles the Tauri application, executes all workspac
 
 ## 6. Current Maturity Assessment: Completion % & Production Readiness
 
-### Overall Completion: ~80% – 85%
-* **Classification**: **Advanced Functional Alpha / High-Fidelity Architectural MVP**.
-* The core architecture, 10 Rust backend crates, 53 MCP tools, and Tauri v2 frontend shell are 100% written and compiling with 0 warnings.
-* It is **significantly beyond a proof-of-concept**, but not yet a commercial, turn-key consumer software product.
+### Overall Completion: ~80% – 85% for the core NLE, materially lower for the AI layer
+* **Classification**: **Advanced Functional Alpha / High-Fidelity Architectural MVP** for editing (timeline, compositing, export, MCP timeline tools). **The three "AI-native" flagship pipelines (local transcription, visual search, generative AI) are non-functional facades as of Phase 13** — see the Phase 14 correction at the top of this doc. Don't quote this percentage as covering those three.
+* The core architecture, 10 Rust backend crates, 52 MCP tools (not 53 — corrected count, see `HISTORY/14-0-mock-audit-findings.md`), and Tauri v2 frontend shell are 100% written and compiling with 0 warnings.
+* It is **significantly beyond a proof-of-concept** for the editing engine; the AI layer is closer to a UI/API skeleton around mocks.
 
 ### Detailed Subsystem Maturity Matrix
 
 | Layer / Subsystem | Completion | Status in Codebase | Gap to Commercial Consumer Release |
 |---|:---:|---|---|
 | **Domain Models & `.palmier`** | **95%** | Complete 21 models, full JSON serde, byte-compatible packaging. | Edge-case metadata extensions (multicam angles, custom LUT embeds). |
-| **Embedded MCP Server** | **95%** | 53 tools live on `http://127.0.0.1:19789/mcp`, full schema validation. | Localhost token authorization if bound to public network interfaces. |
+| **Embedded MCP Server** | **95%** | 52 tools live on `http://127.0.0.1:19789/mcp`, full schema validation. | Localhost token authorization if bound to public network interfaces. |
 | **Timeline Editing Core** | **90%** | Symmetrical undo/redo history, ripple delete, split, trim, move. | Compound nested clip timeline flattening under complex trims. |
 | **Export Engine & Queue** | **85%** | Batch render-to-file, FCPXML 1.10–1.14, Premiere XMEML 4. | Hardware NVENC/AMF video encoding profiles. |
-| **Generative AI & BYOK** | **85%** | Direct provider routing (OpenAI, Kling, Fal, Suno, etc.), zero middleman. | In-app visual preview generator for generation prompt variations. |
+| **Generative AI & BYOK** | **⚠️ ~30%** | Real per-provider HTTP client exists with correct endpoints, but is **never called** — MCP `generate_*` tools fabricate a result and hit no network. See Phase 14. | Wire `generate.rs` to `GenerationService` end-to-end; fix provider-routing bug in `get_job`/`upload_reference`; then the previously-listed gaps. |
 | **Audio DSP Engine** | **80%** | Peak/RMS metering, cross-correlation sync, silence detection, VAD. | Real-time parametric EQ and noise gate audio filters. |
 | **Media Engine (FFmpeg)** | **75%** | Metadata probe, frame decoding via pipe, waveform extraction. | Direct in-process C ABI linking (currently uses child process piping). |
 | **Compositing & Render** | **75%** | `FramePlan` builder, CPU compositor, 12 shader algorithms, LUTs. | Real-time D3D12/Vulkan GPU hardware surface presentation directly to the viewport. |

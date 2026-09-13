@@ -142,6 +142,18 @@ different mechanism:
 
 ## Verification
 
+- **A mock, stub, or placeholder reachable from a non-test code path is
+  never a valid Definition-of-done, regardless of CI status.** CI passing
+  only proves compilation and whatever tests were written — it proves
+  nothing about whether a `Mock*`/`Deterministic*`/simulated
+  implementation is what a real user's call actually hits at runtime. If a
+  mock exists to keep surrounding orchestration testable during
+  development, that's fine, but the phase is not done until every
+  production code path is swapped to the real implementation, and a test
+  exists that would fail if a mock were still wired in. (See
+  `.agents/HISTORY/14-0-mock-audit-findings.md` for exactly this failure
+  mode occurring in Phases 10–12: three "complete" subsystems were
+  self-reported done while a mock was still reachable in production.)
 - Every phase's "Definition of done" in its `PLAN/*.md` doc is the
   acceptance bar — don't mark a subphase complete in `HISTORY.md` until
   it's met.
