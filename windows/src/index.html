@@ -1716,9 +1716,15 @@
       let activeTimeline = null;
 
       async function invoke(cmd, args = {}) {
-        if (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) {
-          return await window.__TAURI__.core.invoke(cmd, args);
+        const core = window.__TAURI__ && window.__TAURI__.core;
+        if (core && core.invoke) {
+          return await core.invoke(cmd, args);
         }
+        // Tauri v2 always exposes the internals bridge, even without the global.
+        if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) {
+          return await window.__TAURI_INTERNALS__.invoke(cmd, args);
+        }
+        console.warn('Tauri IPC unavailable for command:', cmd);
         return null;
       }
 
