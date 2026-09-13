@@ -45,7 +45,7 @@ jobs:
       - name: Setup FFmpeg
         uses: FedericoCarboni/setup-ffmpeg@v3
         with:
-          ffmpeg-version: "7.1.0"
+          ffmpeg-version: "6.1.0"
 
       - name: Bundle FFmpeg sidecar binaries
         shell: pwsh
