@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Derived from Sources/PalmierPro/Generation/GenerationBackend.swift (GPLv3).
 
-use super::types::{BackendGenerationJob, BackendGenerationStatus};
+use super::types::BackendGenerationJob;
+#[cfg(any(test, feature = "test-mocks"))]
+use super::types::BackendGenerationStatus;
 use crate::error::{GenError, GenResult};
 use crate::submission::types::BackendGenerationParams;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
@@ -10,8 +12,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, RwLock};
+#[cfg(any(test, feature = "test-mocks"))]
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
+#[cfg(any(test, feature = "test-mocks"))]
 use uuid::Uuid;
 
 pub trait GenerationBackendClient: Send + Sync {

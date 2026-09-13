@@ -25,13 +25,13 @@ impl OnnxVisualEmbedder {
         tokenizer_path: &Path,
     ) -> SearchResult<Self> {
         let image_session = Session::builder()
-            .and_then(|b| b.commit_from_file(image_encoder_path))
+            .and_then(|mut b| b.commit_from_file(image_encoder_path))
             .map_err(|e| {
                 SearchError::ModelNotReady(format!("Failed to load image encoder ONNX: {e}"))
             })?;
 
         let text_session = Session::builder()
-            .and_then(|b| b.commit_from_file(text_encoder_path))
+            .and_then(|mut b| b.commit_from_file(text_encoder_path))
             .map_err(|e| {
                 SearchError::ModelNotReady(format!("Failed to load text encoder ONNX: {e}"))
             })?;
@@ -93,9 +93,7 @@ impl VisualEmbedder for OnnxVisualEmbedder {
 
         let outputs = self
             .text_session
-            .run(ort::inputs![input_tensor].map_err(|e| {
-                SearchError::AnalysisFailed(format!("Failed to create ONNX inputs: {e}"))
-            })?)
+            .run(ort::inputs![input_tensor])
             .map_err(|e| {
                 SearchError::AnalysisFailed(format!("Text encoder inference failed: {e}"))
             })?;
@@ -138,9 +136,7 @@ impl VisualEmbedder for OnnxVisualEmbedder {
 
         let outputs = self
             .image_session
-            .run(ort::inputs![input_tensor].map_err(|e| {
-                SearchError::AnalysisFailed(format!("Failed to create ONNX inputs: {e}"))
-            })?)
+            .run(ort::inputs![input_tensor])
             .map_err(|e| {
                 SearchError::AnalysisFailed(format!("Image encoder inference failed: {e}"))
             })?;

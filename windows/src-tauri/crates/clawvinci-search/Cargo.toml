@@ -26,7 +26,7 @@ dirs = "6"
 
 # ONNX Runtime for SigLIP2 visual search inference
 ort = { version = "2.0.0-rc.9", features = ["ndarray"] }
-ndarray = "0.16"
+ndarray = "0.17"
 tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
 
 # Whisper.cpp bindings for local on-device transcription
