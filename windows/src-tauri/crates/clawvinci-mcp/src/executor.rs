@@ -9,15 +9,9 @@ use crate::tools::*;
 use serde_json::Value;
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ToolExecutor {
     gen_ctx: Option<Arc<GenerationContext>>,
-}
-
-impl Default for ToolExecutor {
-    fn default() -> Self {
-        Self { gen_ctx: None }
-    }
 }
 
 impl ToolExecutor {
